@@ -1,10 +1,10 @@
-﻿using MediaBrowser.DependencyInjection.Singletons;
-using MediaBrowser.Vault;
+﻿using MediaVault.DependencyInjection.Singletons;
+using MediaVault.Vault;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection;
+namespace MediaVault.DependencyInjection;
 
 [DefaultExecutionOrder(-10000)]
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {

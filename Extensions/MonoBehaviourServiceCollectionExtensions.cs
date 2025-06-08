@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection.Extensions;
+namespace MediaVault.DependencyInjection.Extensions;
 
 public static class MonoBehaviourServiceCollectionExtensions {
     public static IServiceCollection AddMonoBehaviourSingleton<T>(this IServiceCollection services) where T : MonoBehaviour {

@@ -1,3 +1,3 @@
-﻿namespace MediaBrowser.DependencyInjection.Interfaces;
+﻿namespace MediaVault.DependencyInjection.Interfaces;
 
 public interface IAllowsReinitialization;

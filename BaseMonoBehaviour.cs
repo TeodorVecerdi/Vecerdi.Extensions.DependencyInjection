@@ -1,7 +1,7 @@
-﻿using MediaBrowser.DependencyInjection.Extensions;
+﻿using MediaVault.DependencyInjection.Extensions;
 using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection;
+namespace MediaVault.DependencyInjection;
 
 public abstract class BaseMonoBehaviour : MonoBehaviour {
     protected virtual void Awake() {

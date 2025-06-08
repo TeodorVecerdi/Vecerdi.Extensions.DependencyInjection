@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 
-namespace MediaBrowser.DependencyInjection.Infrastructure;
+namespace MediaVault.DependencyInjection.Infrastructure;
 
 internal sealed class InjectedInstancesTracker {
     private const int CleanupInterval = 100;

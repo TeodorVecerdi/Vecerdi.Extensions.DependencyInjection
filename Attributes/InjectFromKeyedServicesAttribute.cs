@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace MediaBrowser.DependencyInjection.Attributes;
+namespace MediaVault.DependencyInjection.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
 [MeansImplicitUse(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.Itself)]

@@ -2,7 +2,7 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection.Singletons;
+namespace MediaVault.DependencyInjection.Singletons;
 
 // ReSharper disable StaticMemberInGenericType
 [HideMonoScript]

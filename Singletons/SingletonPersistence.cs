@@ -1,4 +1,4 @@
-namespace MediaBrowser.DependencyInjection.Singletons;
+namespace MediaVault.DependencyInjection.Singletons;
 
 public enum SingletonPersistence {
     Scene,

@@ -1,4 +1,4 @@
-﻿namespace MediaBrowser.DependencyInjection.Interfaces;
+﻿namespace MediaVault.DependencyInjection.Interfaces;
 
 public interface IPostInitializationCallbacks {
     void OnServicesInitialized();

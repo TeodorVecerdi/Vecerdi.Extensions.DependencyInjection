@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection.Extensions;
+namespace MediaVault.DependencyInjection.Extensions;
 
 public static class MonoBehaviourExtensions {
     public static void InjectServices(this MonoBehaviour monoBehaviour) {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using MediaBrowser.DependencyInjection.Attributes;
+using MediaVault.DependencyInjection.Attributes;
 
-namespace MediaBrowser.DependencyInjection.Infrastructure;
+namespace MediaVault.DependencyInjection.Infrastructure;
 
 internal static class DependencyInjectionCache {
     private static readonly ConcurrentDictionary<Type, CacheInfo> s_Cache = new();

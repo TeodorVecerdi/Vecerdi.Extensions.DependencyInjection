@@ -1,11 +1,11 @@
 ﻿using System.Reflection;
-using MediaBrowser.DependencyInjection.Infrastructure;
-using MediaBrowser.DependencyInjection.Interfaces;
-using MediaBrowser.DependencyInjection.Singletons;
+using MediaVault.DependencyInjection.Infrastructure;
+using MediaVault.DependencyInjection.Interfaces;
+using MediaVault.DependencyInjection.Singletons;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaBrowser.DependencyInjection;
+namespace MediaVault.DependencyInjection;
 
 internal static class BehaviourServices {
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
