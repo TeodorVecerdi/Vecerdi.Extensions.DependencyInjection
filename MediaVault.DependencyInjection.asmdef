@@ -2,7 +2,7 @@
     "name": "MediaVault.DependencyInjection",
     "rootNamespace": "",
     "references": [
-        "GUID:2bffa15c05d2481e82f08630e9f3378b"
+        "MediaVault.Vault"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
