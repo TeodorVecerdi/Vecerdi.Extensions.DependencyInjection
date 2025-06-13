@@ -8,6 +8,7 @@ namespace Vecerdi.Extensions.DependencyInjection;
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
     private static readonly List<Action<IConfigurationManager>> s_ConfigurationRegistrations = [];
+    private static readonly List<Action<IServiceProvider>> s_PostInitializationActions = [];
     private IServiceProvider? m_ServiceProvider;
 
     protected override void Awake() {
@@ -26,6 +27,9 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
         services.AddSingleton<IConfiguration>(configuration);
 
         m_ServiceProvider = services.BuildServiceProvider();
+
+        s_PostInitializationActions.ForEach(action => action(m_ServiceProvider));
+        s_PostInitializationActions.Clear();
     }
 
     protected override void OnDestroy() {
@@ -48,6 +52,10 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
 
     public static void RegisterConfiguration(Action<IConfigurationManager> configuration) {
         s_ConfigurationRegistrations.Add(configuration);
+    }
+
+    public static void RegisterPostInitializationAction(Action<IServiceProvider> action) {
+        s_PostInitializationActions.Add(action);
     }
 
     object? IServiceProvider.GetService(Type serviceType) {
