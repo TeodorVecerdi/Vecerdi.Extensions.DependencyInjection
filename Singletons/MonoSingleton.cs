@@ -2,7 +2,7 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace MediaVault.DependencyInjection.Singletons;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 // ReSharper disable StaticMemberInGenericType
 [HideMonoScript]

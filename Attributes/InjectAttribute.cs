@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace MediaVault.DependencyInjection.Attributes;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 [AttributeUsage(AttributeTargets.Property)]
 [MeansImplicitUse(ImplicitUseKindFlags.Assign, ImplicitUseTargetFlags.Itself)]

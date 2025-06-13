@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using MediaVault.DependencyInjection.Attributes;
+using Vecerdi.Extensions.DependencyInjection;
 
-namespace MediaVault.DependencyInjection.Infrastructure;
+namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 internal static class DependencyInjectionCache {
     private static readonly ConcurrentDictionary<Type, CacheInfo> s_Cache = new();

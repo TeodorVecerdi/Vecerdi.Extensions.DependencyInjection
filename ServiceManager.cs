@@ -1,9 +1,8 @@
-﻿using MediaVault.DependencyInjection.Singletons;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaVault.DependencyInjection;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 [DefaultExecutionOrder(-10000)]
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {

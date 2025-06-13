@@ -1,5 +1,5 @@
 {
-    "name": "MediaVault.DependencyInjection",
+    "name": "Vecerdi.Extensions.DependencyInjection",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [],

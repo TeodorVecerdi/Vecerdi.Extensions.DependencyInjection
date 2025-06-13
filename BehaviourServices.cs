@@ -1,11 +1,9 @@
 ﻿using System.Reflection;
-using MediaVault.DependencyInjection.Infrastructure;
-using MediaVault.DependencyInjection.Interfaces;
-using MediaVault.DependencyInjection.Singletons;
+using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaVault.DependencyInjection;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 internal static class BehaviourServices {
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();

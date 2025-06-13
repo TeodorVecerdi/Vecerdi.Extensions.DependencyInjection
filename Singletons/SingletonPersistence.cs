@@ -1,4 +1,4 @@
-namespace MediaVault.DependencyInjection.Singletons;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 public enum SingletonPersistence {
     Scene,

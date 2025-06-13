@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 
-namespace MediaVault.DependencyInjection.Extensions;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 public static class MonoBehaviourServiceCollectionExtensions {
     public static IServiceCollection AddMonoBehaviourSingleton<T>(this IServiceCollection services) where T : MonoBehaviour {

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace MediaVault.DependencyInjection.Extensions;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 public static class MonoBehaviourExtensions {
     public static void InjectServices(this MonoBehaviour monoBehaviour) {

@@ -1,7 +1,6 @@
-﻿using MediaVault.DependencyInjection.Extensions;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace MediaVault.DependencyInjection;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 public abstract class BaseMonoBehaviour : MonoBehaviour {
     protected virtual void Awake() {
