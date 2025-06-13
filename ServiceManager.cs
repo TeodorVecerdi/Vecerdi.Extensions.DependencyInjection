@@ -9,6 +9,7 @@ namespace MediaVault.DependencyInjection;
 [DefaultExecutionOrder(-10000)]
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
+    private static readonly List<Action<IConfigurationManager>> s_ConfigurationRegistrations = [];
     private IServiceProvider? m_ServiceProvider;
 
     protected override void Awake() {
@@ -16,6 +17,8 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
 
         var configuration = new ConfigurationManager();
         configuration.AddVault(["*.json"]);
+        s_ConfigurationRegistrations.ForEach(action => action(configuration));
+        s_ConfigurationRegistrations.Clear();
 
         var services = new ServiceCollection();
         s_ServiceRegistrations.ForEach(action => action(services, configuration));
@@ -44,6 +47,10 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
 
     public static void RegisterServices(Action<IServiceCollection, IConfigurationManager> configuration) {
         s_ServiceRegistrations.Add(configuration);
+    }
+
+    public static void RegisterConfiguration(Action<IConfigurationManager> configuration) {
+        s_ConfigurationRegistrations.Add(configuration);
     }
 
     object? IServiceProvider.GetService(Type serviceType) {
