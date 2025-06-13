@@ -1,9 +1,7 @@
 {
     "name": "MediaVault.DependencyInjection",
     "rootNamespace": "",
-    "references": [
-        "MediaVault.Vault"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

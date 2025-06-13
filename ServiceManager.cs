@@ -1,5 +1,4 @@
 ﻿using MediaVault.DependencyInjection.Singletons;
-using MediaVault.Vault;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
@@ -16,7 +15,6 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
         base.Awake();
 
         var configuration = new ConfigurationManager();
-        configuration.AddVault(["*.json"]);
         s_ConfigurationRegistrations.ForEach(action => action(configuration));
         s_ConfigurationRegistrations.Clear();
 
