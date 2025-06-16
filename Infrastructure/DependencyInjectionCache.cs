@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Vecerdi.Extensions.DependencyInjection;
 
 namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
