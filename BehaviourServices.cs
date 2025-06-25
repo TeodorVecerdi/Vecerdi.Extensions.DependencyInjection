@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
-using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
+using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
