@@ -1,0 +1,11 @@
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/bin/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.deps.json
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/bin/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.dll
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/bin/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.pdb
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj.AssemblyReference.cache
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.AssemblyInfoInputs.cache
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.AssemblyInfo.cs
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj.CoreCompileInputs.cache
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.sourcelink.json
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.dll
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/Debug/netstandard2.0/Vecerdi.Extensions.DependencyInjection.SourceGenerator.pdb

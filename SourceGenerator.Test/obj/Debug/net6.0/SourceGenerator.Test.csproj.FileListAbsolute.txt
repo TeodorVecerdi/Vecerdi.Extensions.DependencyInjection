@@ -1,0 +1,12 @@
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/bin/Debug/net6.0/SourceGenerator.Test.deps.json
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/bin/Debug/net6.0/SourceGenerator.Test.dll
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/bin/Debug/net6.0/SourceGenerator.Test.pdb
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.AssemblyInfoInputs.cache
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.AssemblyInfo.cs
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.csproj.CoreCompileInputs.cache
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.sourcelink.json
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.dll
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/refint/SourceGenerator.Test.dll
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/SourceGenerator.Test.pdb
+/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/obj/Debug/net6.0/ref/SourceGenerator.Test.dll

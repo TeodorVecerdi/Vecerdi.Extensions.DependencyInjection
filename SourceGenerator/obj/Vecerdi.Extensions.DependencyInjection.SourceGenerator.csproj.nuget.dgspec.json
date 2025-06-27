@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj": {}
+  },
+  "projects": {
+    "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj",
+        "projectName": "Vecerdi.Extensions.DependencyInjection.SourceGenerator",
+        "projectPath": "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/runner/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.0": {
+            "targetAlias": "netstandard2.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netstandard2.0": {
+          "targetAlias": "netstandard2.0",
+          "dependencies": {
+            "Microsoft.CodeAnalysis.Analyzers": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[3.3.4, )"
+            },
+            "Microsoft.CodeAnalysis.CSharp": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[4.5.0, )"
+            },
+            "NETStandard.Library": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.0.3, )",
+              "autoReferenced": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.117/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
