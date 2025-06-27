@@ -1,2 +1,13 @@
 csc.rsp
 csc.rsp.meta
+
+# Build artifacts
+bin/
+obj/
+*.dll
+*.pdb
+*.cache
+
+# Source Generator artifacts  
+generated/
+*.g.cs
