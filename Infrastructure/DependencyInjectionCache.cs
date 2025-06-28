@@ -1,37 +1,64 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 internal static partial class DependencyInjectionCache {
     private static readonly ConcurrentDictionary<Type, CacheInfo> s_ReflectionCache = new();
     
-    // This will be populated by the source generator if available
-    private static readonly ConcurrentDictionary<Type, IReadOnlyList<(PropertyInfo PropertyInfo, object? ServiceKey, bool IsRequired)>> s_GeneratedCache = new();
+    // Delegate for generated injection methods
+    private static readonly ConcurrentDictionary<Type, Action<object, IServiceProvider>> s_GeneratedInjectionMethods = new();
 
+    public static void InjectServices(Type type, object instance, IServiceProvider serviceProvider) {
+        // First, try to use generated injection method (no reflection)
+        if (s_GeneratedInjectionMethods.TryGetValue(type, out var injectionMethod)) {
+            injectionMethod(instance, serviceProvider);
+            return;
+        }
+        
+        // Fall back to reflection-based injection
+        var cacheInfo = s_ReflectionCache.GetOrAdd(type, t => new CacheInfo(t));
+        foreach (var (property, serviceKey, isRequired) in cacheInfo.InjectableProperties) {
+            var service = serviceKey is not null
+                ? (serviceProvider as IKeyedServiceProvider)?.GetKeyedService(property.PropertyType, serviceKey)
+                : serviceProvider.GetService(property.PropertyType);
+            
+            if (service is null) {
+                if (isRequired) {
+                    throw new InvalidOperationException($"Required service {property.PropertyType} is not registered.");
+                }
+                continue;
+            }
+
+            property.SetValue(instance, service);
+        }
+    }
+
+    // Legacy method for backward compatibility - returns properties for reflection-based injection
     public static IReadOnlyList<(PropertyInfo PropertyInfo, object? ServiceKey, bool IsRequired)> GetInjectableProperties(Type type) {
-        // First, try to get from generated cache (populated by source generator)
-        if (s_GeneratedCache.TryGetValue(type, out var generatedProperties)) {
-            return generatedProperties;
+        // If we have a generated injection method, we don't need to return properties for reflection
+        if (s_GeneratedInjectionMethods.ContainsKey(type)) {
+            return Array.Empty<(PropertyInfo, object?, bool)>();
         }
         
         // Fall back to reflection-based discovery
         return s_ReflectionCache.GetOrAdd(type, t => new CacheInfo(t)).InjectableProperties;
     }
 
-    // This method will be called by the source generator to register pre-computed cache entries
-    internal static void RegisterGeneratedProperties(Type type, IReadOnlyList<(PropertyInfo PropertyInfo, object? ServiceKey, bool IsRequired)> properties) {
-        s_GeneratedCache[type] = properties;
+    // This method will be called by the source generator to register injection methods
+    internal static void RegisterInjectionMethod(Type type, Action<object, IServiceProvider> injectionMethod) {
+        s_GeneratedInjectionMethods[type] = injectionMethod;
     }
 
-    // Helper method to check if a type has generated cache entries (useful for debugging/diagnostics)
-    public static bool HasGeneratedCache(Type type) {
-        return s_GeneratedCache.ContainsKey(type);
+    // Helper method to check if a type has generated injection method (useful for debugging/diagnostics)
+    public static bool HasGeneratedInjectionMethod(Type type) {
+        return s_GeneratedInjectionMethods.ContainsKey(type);
     }
 
-    // Get count of types with generated cache entries
-    public static int GeneratedCacheCount => s_GeneratedCache.Count;
+    // Get count of types with generated injection methods
+    public static int GeneratedInjectionMethodCount => s_GeneratedInjectionMethods.Count;
 
     private static bool IsRequired(PropertyInfo property) {
         return property.GetCustomAttribute<RequiredMemberAttribute>() != null;

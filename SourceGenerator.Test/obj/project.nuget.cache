@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "Vsn0t7/PKTqWdYZ3MMwY81e0qrJIjsepQXwKx4oH78phnGnjHpSUj+qPZWEBZFpEVRqHMKzSJHwF9GJxlOCEpg==",
+  "dgSpecHash": "4/o5wZkNwq1CaI1cPKkpndwVHATcFA4oQa1L2y2Wp+PCbt3VQEPDwcAC9xKhD+u/8hUuklA5SXklnp0j7kllwQ==",
   "success": true,
   "projectFilePath": "/home/runner/work/Vecerdi.Extensions.DependencyInjection/Vecerdi.Extensions.DependencyInjection/SourceGenerator.Test/SourceGenerator.Test.csproj",
   "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection/8.0.0/microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.netcore.app.ref/6.0.36/microsoft.netcore.app.ref.6.0.36.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.36/microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512"
   ],

@@ -14,21 +14,8 @@ internal static class BehaviourServices {
             return;
         }
 
-        var injectableProperties = DependencyInjectionCache.GetInjectableProperties(instance.GetType());
-        foreach (var (property, serviceKey, isRequired) in injectableProperties) {
-            var service = serviceKey is not null
-                ? (serviceProvider as IKeyedServiceProvider)?.GetKeyedService(property.PropertyType, serviceKey)
-                : serviceProvider.GetService(property.PropertyType);
-            if (service is null) {
-                if (isRequired) {
-                    throw new InvalidOperationException($"Required service {property.PropertyType} is not registered.");
-                }
-
-                continue;
-            }
-
-            property.SetValue(instance, service);
-        }
+        // Use the new unified injection method that handles both generated and reflection-based injection
+        DependencyInjectionCache.InjectServices(instance.GetType(), instance, serviceProvider);
 
         if (instance is IPostInitializationCallbacks callbacks) {
             callbacks.OnServicesInitialized();

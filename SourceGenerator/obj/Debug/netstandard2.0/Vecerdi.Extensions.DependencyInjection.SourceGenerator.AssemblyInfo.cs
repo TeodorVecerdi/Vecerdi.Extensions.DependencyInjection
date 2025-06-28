@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Vecerdi.Extensions.DependencyInjection.SourceGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d3f6397eea2941eb1788047365e8ff25f035ecb4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4d474842359bca2d673c428e999e678ce1e6c885")]
 [assembly: System.Reflection.AssemblyProductAttribute("Vecerdi.Extensions.DependencyInjection.SourceGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Vecerdi.Extensions.DependencyInjection.SourceGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -142,8 +142,7 @@ public sealed class DependencyInjectionSourceGenerator : ISourceGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
-        sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using System.Reflection;");
+        sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         sb.AppendLine();
         sb.AppendLine("namespace Vecerdi.Extensions.DependencyInjection.Infrastructure");
         sb.AppendLine("{");
@@ -151,32 +150,92 @@ public sealed class DependencyInjectionSourceGenerator : ISourceGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        static DependencyInjectionCache()");
         sb.AppendLine("        {");
-        sb.AppendLine("            InitializeGeneratedCache();");
+        sb.AppendLine("            InitializeGeneratedInjectionMethods();");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.AppendLine("        private static void InitializeGeneratedCache()");
+        sb.AppendLine("        private static void InitializeGeneratedInjectionMethods()");
         sb.AppendLine("        {");
         
         foreach (var classInfo in classes)
         {
-            sb.AppendLine($"            // Register properties for {classInfo.FullName}");
-            sb.AppendLine($"            RegisterGeneratedProperties(typeof({classInfo.FullName}), new List<(PropertyInfo, object?, bool)>");
-            sb.AppendLine("            {");
-            
-            foreach (var property in classInfo.Properties)
-            {
-                var serviceKeyValue = property.ServiceKey != null ? $"\"{property.ServiceKey}\"" : "null";
-                sb.AppendLine($"                (typeof({classInfo.FullName}).GetProperty(\"{property.Name}\")!, {serviceKeyValue}, {property.IsRequired.ToString().ToLower()}),");
-            }
-            
-            sb.AppendLine("            });");
-            sb.AppendLine();
+            var methodName = $"Inject{SanitizeIdentifier(classInfo.Name)}";
+            sb.AppendLine($"            RegisterInjectionMethod(typeof({classInfo.FullName}), {methodName});");
         }
         
         sb.AppendLine("        }");
+        sb.AppendLine();
+        
+        // Generate injection methods for each class
+        foreach (var classInfo in classes)
+        {
+            GenerateInjectionMethod(sb, classInfo);
+        }
+        
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
+        return sb.ToString();
+    }
+
+    private static void GenerateInjectionMethod(StringBuilder sb, ClassInfo classInfo)
+    {
+        var methodName = $"Inject{SanitizeIdentifier(classInfo.Name)}";
+        
+        sb.AppendLine($"        private static void {methodName}(object instance, IServiceProvider serviceProvider)");
+        sb.AppendLine("        {");
+        sb.AppendLine($"            var typedInstance = ({classInfo.FullName})instance;");
+        sb.AppendLine();
+
+        foreach (var property in classInfo.Properties)
+        {
+            if (property.ServiceKey != null)
+            {
+                // Keyed service injection - use non-generic methods to avoid nullable type issues
+                if (property.IsRequired)
+                {
+                    sb.AppendLine($"            typedInstance.{property.Name} = ({property.Type})((IKeyedServiceProvider)serviceProvider).GetRequiredKeyedService(typeof({GetNonNullableTypeName(property.Type)}), \"{property.ServiceKey}\");");
+                }
+                else
+                {
+                    sb.AppendLine($"            typedInstance.{property.Name} = ({property.Type})((IKeyedServiceProvider)serviceProvider).GetKeyedService(typeof({GetNonNullableTypeName(property.Type)}), \"{property.ServiceKey}\");");
+                }
+            }
+            else
+            {
+                // Regular service injection - use non-generic methods to avoid nullable type issues
+                if (property.IsRequired)
+                {
+                    sb.AppendLine($"            typedInstance.{property.Name} = ({property.Type})serviceProvider.GetRequiredService(typeof({GetNonNullableTypeName(property.Type)}));");
+                }
+                else
+                {
+                    sb.AppendLine($"            typedInstance.{property.Name} = ({property.Type})serviceProvider.GetService(typeof({GetNonNullableTypeName(property.Type)}));");
+                }
+            }
+        }
+        
+        sb.AppendLine("        }");
+        sb.AppendLine();
+    }
+
+    private static string GetNonNullableTypeName(string typeName)
+    {
+        // Remove nullable annotation for value types (e.g., "double?" -> "double")
+        // For reference types with nullable annotation (e.g., "string?"), remove the ? but keep the type name
+        return typeName.EndsWith("?") ? typeName.TrimEnd('?') : typeName;
+    }
+
+    private static string SanitizeIdentifier(string name)
+    {
+        // Remove any characters that aren't valid in C# identifiers
+        var sb = new StringBuilder();
+        foreach (var ch in name)
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '_')
+                sb.Append(ch);
+            else
+                sb.Append('_');
+        }
         return sb.ToString();
     }
 
