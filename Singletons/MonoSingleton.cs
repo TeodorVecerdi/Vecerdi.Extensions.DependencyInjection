@@ -10,6 +10,7 @@ public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehavio
     private static T? s_Instance;
 
     public static bool InstanceExists => s_Instance != null;
+    public static T? InstanceOrNull => s_Instance;
 
     public static T Instance {
         get {
