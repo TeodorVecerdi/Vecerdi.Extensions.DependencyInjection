@@ -9,6 +9,8 @@ namespace Vecerdi.Extensions.DependencyInjection;
 public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehaviour {
     private static T? s_Instance;
 
+    public static bool InstanceExists => s_Instance != null;
+
     public static T Instance {
         get {
             if (s_Instance != null) {
