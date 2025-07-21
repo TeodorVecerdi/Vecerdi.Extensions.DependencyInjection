@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
+using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
 [DefaultExecutionOrder(-10000)]
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {
+    public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
+
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
     private static readonly List<Action<IConfigurationManager>> s_ConfigurationRegistrations = [];
     private static readonly List<Action<IServiceProvider>> s_PostInitializationActions = [];

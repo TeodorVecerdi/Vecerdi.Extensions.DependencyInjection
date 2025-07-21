@@ -6,16 +6,15 @@ using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 namespace Vecerdi.Extensions.DependencyInjection;
 
 internal static class BehaviourServices {
-    public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
 
-    public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, MonoBehaviour instance) {
+    public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, ITypeInjectorResolver resolver, MonoBehaviour instance) {
         var allowsMultiple = instance is IAllowsReinitialization;
         if (!allowsMultiple && s_InjectedInstances.Contains(instance)) {
             return;
         }
 
-        var injector = Resolver.GetTypeInjector(instance.GetType());
+        var injector = resolver.GetTypeInjector(instance.GetType());
         if (injector == null) {
             // This shouldn't happen if Resolver includes a reflection fallback, but for safety.
             throw new InvalidOperationException($"No injector found for type {instance.GetType()}.");
