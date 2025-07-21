@@ -2,6 +2,8 @@
 
 A modern dependency injection library for Unity that brings Microsoft's dependency injection container to Unity projects with seamless integration and automatic service injection.
 
+See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github.com/TeodorVecerdi/Vecerdi.Extensions.DependencyInjection.SourceGenerator) for a more performant and reflection-free solution to injecting services.
+
 ## Features
 
 - 🎯 **Property-based injection** using attributes
