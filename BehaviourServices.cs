@@ -6,6 +6,7 @@ using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 namespace Vecerdi.Extensions.DependencyInjection;
 
 internal static class BehaviourServices {
+    public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
 
     public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, MonoBehaviour instance) {
@@ -14,21 +15,13 @@ internal static class BehaviourServices {
             return;
         }
 
-        var injectableProperties = DependencyInjectionCache.GetInjectableProperties(instance.GetType());
-        foreach (var (property, serviceKey, isRequired) in injectableProperties) {
-            var service = serviceKey is not null
-                ? (serviceProvider as IKeyedServiceProvider)?.GetKeyedService(property.PropertyType, serviceKey)
-                : serviceProvider.GetService(property.PropertyType);
-            if (service is null) {
-                if (isRequired) {
-                    throw new InvalidOperationException($"Required service {property.PropertyType} is not registered.");
-                }
-
-                continue;
-            }
-
-            property.SetValue(instance, service);
+        var injector = Resolver.GetTypeInjector(instance.GetType());
+        if (injector == null) {
+            // This shouldn't happen if Resolver includes a reflection fallback, but for safety.
+            throw new InvalidOperationException($"No injector found for type {instance.GetType()}.");
         }
+
+        injector.Inject(serviceProvider, instance);
 
         if (instance is IPostInitializationCallbacks callbacks) {
             callbacks.OnServicesInitialized();
