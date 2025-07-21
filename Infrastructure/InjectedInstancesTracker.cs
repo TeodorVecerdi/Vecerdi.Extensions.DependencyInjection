@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using UnityEngine;
-using UnityEngine.Pool;
 
 namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
@@ -27,8 +26,7 @@ internal sealed class InjectedInstancesTracker {
     }
 
     private void CleanupDestroyed() {
-        using var pooledObject = ListPool<MonoBehaviour?>.Get(out var toRemove);
-        toRemove.AddRange(m_Instances.Keys.Where(instance => instance == null));
+        var toRemove = m_Instances.Keys.Where(instance => instance == null).ToList();
         foreach (var instance in toRemove) {
             m_Instances.TryRemove(instance!, out _);
         }

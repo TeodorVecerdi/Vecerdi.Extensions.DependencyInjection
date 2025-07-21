@@ -1,11 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
 // ReSharper disable StaticMemberInGenericType
-[HideMonoScript]
 public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehaviour {
     private static T? s_Instance;
 
