@@ -21,10 +21,8 @@ See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github
 - [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) to enable modern C# features in Unity
 - The following NuGet packages:
     - PolySharp
-    - Microsoft.Extensions.Configuration
     - Microsoft.Extensions.DependencyInjection
-    - Microsoft.Extensions.Options
-    - Microsoft.Extensions.Options.ConfigurationExtensions
+    - Microsoft.Extensions.Hosting
 
 ## Installation
 
