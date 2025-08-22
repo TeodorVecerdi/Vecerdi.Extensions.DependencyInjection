@@ -39,6 +39,10 @@ public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehavio
     protected override void Awake() {
         if (s_Instance == null) {
             s_Instance = this as T;
+            if (Persistence is SingletonPersistence.Application) {
+                DontDestroyOnLoad(s_Instance);
+            }
+
             base.Awake();
             return;
         }
