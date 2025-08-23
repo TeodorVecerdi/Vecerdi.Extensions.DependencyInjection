@@ -116,7 +116,7 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
     private async Task StopHostedServicesAsync() {
         if (m_ServiceProvider is null)
             throw new InvalidOperationException("ServiceManager is not initialized yet");
-        if (!m_HostedServices.Any())
+        if (m_HostedServices.Count == 0)
             return;
 
         var logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
