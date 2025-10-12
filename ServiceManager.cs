@@ -30,8 +30,6 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
         s_ServiceRegistrations.ForEach(action => action(services, configuration));
         s_ServiceRegistrations.Clear();
 
-        services.AddSingleton<IServiceProvider>(this);
-        services.AddSingleton<IKeyedServiceProvider>(this);
         services.AddSingleton<IConfiguration>(configuration);
 
         m_ServiceProvider = services.BuildServiceProvider();
