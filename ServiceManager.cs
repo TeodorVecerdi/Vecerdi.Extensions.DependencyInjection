@@ -49,7 +49,7 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
 
         // ReSharper disable SuspiciousTypeConversion.Global
         if (m_ServiceProvider is IAsyncDisposable asyncDisposable) {
-            _ = asyncDisposable.DisposeAsync();
+            asyncDisposable.DisposeAsync().GetAwaiter().GetResult();
         } else if (m_ServiceProvider is IDisposable disposable) {
             disposable.Dispose();
         }
