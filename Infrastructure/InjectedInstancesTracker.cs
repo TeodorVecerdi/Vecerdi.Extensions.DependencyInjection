@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using UnityEngine;
 
 namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
@@ -16,6 +16,11 @@ internal sealed class InjectedInstancesTracker {
     public void Add(MonoBehaviour instance) {
         IncrementOperationCount();
         m_Instances.TryAdd(instance, 0);
+    }
+
+    public void Clear() {
+        m_Instances.Clear();
+        m_OperationCount = 0;
     }
 
     private void IncrementOperationCount() {

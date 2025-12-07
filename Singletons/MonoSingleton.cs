@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Vecerdi.Extensions.DependencyInjection;
@@ -56,8 +56,14 @@ public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehavio
 
     protected virtual void OnDestroy() {
         if (s_Instance == this) {
-            s_Instance = null;
+            ResetInstance();
         }
+    }
+
+    internal static void ResetInstance() {
+        if (s_Instance is IDisposable disposable)
+            disposable.Dispose();
+        s_Instance = null;
     }
 
     static MonoSingleton() {
