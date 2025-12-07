@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
@@ -58,5 +58,12 @@ internal static class BehaviourServices {
             return (MonoBehaviour)instanceProperty.GetValue(null)
                 ?? throw new InvalidOperationException($"Failed to get instance of {type.Name}");
         }
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+    private static void ResetCachesForEnterPlayMode() {
+        s_InjectedInstances.Clear();
+        DependencyInjectionCache.ClearCache();
+        MonoSingleton<ServiceManager>.ResetInstance();
     }
 }
