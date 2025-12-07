@@ -11,6 +11,10 @@ internal static class DependencyInjectionCache {
         return s_Cache.GetOrAdd(type, t => new CacheInfo(t)).InjectableProperties;
     }
 
+    internal static void ClearCache() {
+        s_Cache.Clear();
+    }
+
     private static bool IsRequired(PropertyInfo property) {
         return property.GetCustomAttribute<RequiredMemberAttribute>() != null;
     }
