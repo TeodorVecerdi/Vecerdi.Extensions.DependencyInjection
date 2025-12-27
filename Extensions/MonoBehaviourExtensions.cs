@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Vecerdi.Extensions.DependencyInjection.Internal;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 

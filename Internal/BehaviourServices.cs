@@ -3,9 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
-namespace Vecerdi.Extensions.DependencyInjection;
+namespace Vecerdi.Extensions.DependencyInjection.Internal;
 
-internal static class BehaviourServices {
+public static class BehaviourServices {
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
 
     public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, ITypeInjectorResolver resolver, MonoBehaviour instance) {
