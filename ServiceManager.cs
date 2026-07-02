@@ -18,6 +18,13 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
     private IServiceProvider? m_ServiceProvider;
     private readonly List<IHostedService> m_HostedServices = [];
     private readonly CancellationTokenSource m_ApplicationStoppingCts = new();
+    private readonly TaskCompletionSource<bool> m_ReadyTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// Completes once the service provider has been built and all hosted services have finished starting.
+    /// This task never faults: hosted-service startup failures are logged and do not prevent readiness.
+    /// </summary>
+    public Task WhenReady => m_ReadyTcs.Task;
 
     protected override void Awake() {
         base.Awake();
@@ -111,6 +118,8 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
             }
         } catch (Exception ex) {
             logger.LogError(ex, "Error starting hosted services");
+        } finally {
+            m_ReadyTcs.TrySetResult(true);
         }
     }
 
