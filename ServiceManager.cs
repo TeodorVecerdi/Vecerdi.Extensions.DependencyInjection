@@ -113,9 +113,15 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
             var hostedServices = m_ServiceProvider.GetServices<IHostedService>();
             m_HostedServices.AddRange(hostedServices);
 
-            foreach (var hostedService in m_HostedServices) {
-                await hostedService.StartAsync(m_ApplicationStoppingCts.Token);
-            }
+            // Hosted services start concurrently; services that depend on one another should model the
+            // dependency explicitly rather than relying on registration order.
+            await Task.WhenAll(m_HostedServices.Select(async hostedService => {
+                try {
+                    await hostedService.StartAsync(m_ApplicationStoppingCts.Token);
+                } catch (Exception ex) {
+                    logger.LogError(ex, "Error starting hosted service {Name}", hostedService.GetType().Name);
+                }
+            }));
         } catch (Exception ex) {
             logger.LogError(ex, "Error starting hosted services");
         } finally {
