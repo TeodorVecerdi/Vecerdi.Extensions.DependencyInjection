@@ -82,7 +82,11 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
             throw new InvalidOperationException("ServiceManager is not initialized yet");
         }
 
-        return m_ServiceProvider.GetKeyedServices(serviceType, serviceKey).FirstOrDefault();
+        if (m_ServiceProvider is IKeyedServiceProvider keyedServiceProvider) {
+            return keyedServiceProvider.GetKeyedService(serviceType, serviceKey);
+        }
+
+        throw new InvalidOperationException("The underlying service provider does not support keyed services.");
     }
 
     public object GetRequiredKeyedService(Type serviceType, object? serviceKey) {
@@ -90,8 +94,7 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
             throw new InvalidOperationException("ServiceManager is not initialized yet");
         }
 
-        return m_ServiceProvider.GetKeyedServices(serviceType, serviceKey).FirstOrDefault()
-            ?? throw new InvalidOperationException($"Service {serviceType} with key {serviceKey} is not registered.");
+        return m_ServiceProvider.GetRequiredKeyedService(serviceType, serviceKey);
     }
 
     private async Task StartHostedServicesAsync() {
