@@ -10,6 +10,8 @@ namespace Vecerdi.Extensions.DependencyInjection;
 
 [DefaultExecutionOrder(-10000)]
 public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {
+    private static readonly TimeSpan s_ShutdownTimeout = TimeSpan.FromSeconds(5);
+
     public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
 
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
@@ -50,11 +52,22 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
     protected override void OnDestroy() {
         base.OnDestroy();
 
-        _ = StopHostedServicesAsync();
+        // Hosted services must finish stopping *before* the provider their dependencies live in is
+        // disposed. Blocking the main thread with a bounded wait is intentional here: this runs during
+        // teardown, and racing the disposal is worse than a short stall on exit.
+        try {
+            if (!StopHostedServicesAsync().Wait(s_ShutdownTimeout)) {
+                Debug.LogWarning($"[{nameof(ServiceManager)}] Hosted services did not stop within {s_ShutdownTimeout.TotalSeconds:0}s; continuing with service provider disposal.");
+            }
+        } catch (AggregateException ex) {
+            Debug.LogException(ex.GetBaseException());
+        }
 
         // ReSharper disable SuspiciousTypeConversion.Global
         if (m_ServiceProvider is IAsyncDisposable asyncDisposable) {
-            asyncDisposable.DisposeAsync().GetAwaiter().GetResult();
+            if (!asyncDisposable.DisposeAsync().AsTask().Wait(s_ShutdownTimeout)) {
+                Debug.LogWarning($"[{nameof(ServiceManager)}] Service provider did not dispose within {s_ShutdownTimeout.TotalSeconds:0}s.");
+            }
         } else if (m_ServiceProvider is IDisposable disposable) {
             disposable.Dispose();
         }
