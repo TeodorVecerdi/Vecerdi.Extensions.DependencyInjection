@@ -10,7 +10,7 @@ public static class BehaviourServices {
 
     public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, ITypeInjectorResolver resolver, MonoBehaviour instance) {
         var allowsMultiple = instance is IAllowsReinitialization;
-        if (!allowsMultiple && s_InjectedInstances.Contains(instance)) {
+        if (!allowsMultiple && IsAlreadyInjected(instance)) {
             return;
         }
 
@@ -27,6 +27,21 @@ public static class BehaviourServices {
         }
 
         if (!allowsMultiple) {
+            MarkInjected(instance);
+        }
+    }
+
+    // BaseMonoBehaviour carries its own flag, so the common case never touches the tracker. Any other MonoBehaviour
+    // (InjectServices() is an extension on MonoBehaviour and works on foreign base classes) falls back to the
+    // id-based tracker.
+    private static bool IsAlreadyInjected(MonoBehaviour instance) => instance is BaseMonoBehaviour baseMonoBehaviour
+        ? baseMonoBehaviour.ServicesInjected
+        : s_InjectedInstances.Contains(instance);
+
+    private static void MarkInjected(MonoBehaviour instance) {
+        if (instance is BaseMonoBehaviour baseMonoBehaviour) {
+            baseMonoBehaviour.ServicesInjected = true;
+        } else {
             s_InjectedInstances.Add(instance);
         }
     }
