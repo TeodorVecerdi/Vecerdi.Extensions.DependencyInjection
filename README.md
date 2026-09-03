@@ -145,6 +145,12 @@ quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestro
   not touch MonoBehaviour singletons or main-thread-only Unity APIs (`Application.persistentDataPath`, `Screen`,
   `GameObject` creation, …). Hop to the main thread explicitly where one is needed. Services start concurrently,
   so a service that depends on another should model that dependency rather than rely on registration order.
+- **MonoBehaviour singletons live as long as the container.** The container caches a singleton once and never
+  re-creates it, so a registered MonoBehaviour that Unity destroys on a scene load is handed out dead from then on.
+  A singleton the container creates is therefore made `DontDestroyOnLoad`, overriding a `Persistence.Scene`
+  setting; a scene-placed instance keeps its author's persistence, so give it `Persistence.Application` in any
+  project that loads more than one scene. Scene-placed singletons cannot be resolved before the first scene loads
+  (a hosted service or post-initialization action that tries gets an exception saying so).
 - **Teardown** runs from the host object's `OnDestroy`. Unity destroys objects in ascending script execution order,
   and the host sits at `int.MaxValue`, so every other `OnDisable` and `OnDestroy` runs first and can still use its
   injected services. Stopping the hosted services (reverse registration order) and disposing the provider each get
