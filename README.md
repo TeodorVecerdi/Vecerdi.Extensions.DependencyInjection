@@ -18,9 +18,11 @@ See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github
 
 ## Requirements
 
-- Unity 6.5 or later (the editor teardown hook uses Unity's built-in play-mode lifecycle attributes, which are not present in 6.2)
-- Modern C# compiler with C# 13+ support
-- [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) to enable modern C# features in Unity
+- One of:
+    - **Unity 6.5 or later** with [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) to
+      enable modern C# features (C# 13+) on the Mono runtime
+    - **Unity 7 or later**, which runs on CoreCLR and ships the latest C# features out of the box
+- The editor teardown hook uses Unity's built-in play-mode lifecycle attributes, which are not present before 6.5
 - The following NuGet packages:
     - PolySharp
     - Microsoft.Extensions.DependencyInjection
