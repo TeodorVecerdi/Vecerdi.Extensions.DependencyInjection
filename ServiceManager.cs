@@ -38,15 +38,18 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             throw new InvalidOperationException("ServiceManager was already initialized or its instance was not cleared properly.");
         }
 
-        // Fallback teardown until the host object confirms it is alive (see SpawnHost).
+        // Fallback until the host object confirms it is alive (see SpawnHost): if the first scene never loads,
+        // Application.quitting is the only teardown we get.
         Application.quitting += HandleApplicationQuitting;
         BehaviourServices.ResetCachesForEnterPlayMode();
         s_Instance = new ServiceManager();
         s_Instance.InitializeServiceManager();
     }
 
-    // Spike: a hidden host object owns teardown from its OnDestroy, which runs alongside every other object's
-    // OnDestroy at quit / play-mode exit instead of before them (Application.quitting). Spawned at
+    // Teardown is owned by a hidden host object and runs from its OnDestroy. Application.quitting fires BEFORE
+    // scene objects are destroyed, which would leave every other OnDestroy/OnDisable with a disposed provider;
+    // OnDestroy honours script execution order (ascending, verified 2026-09-03), so a host at int.MaxValue is
+    // destroyed after every other script and services stay usable throughout teardown. Spawned at
     // BeforeSceneLoad, the earliest point where creating GameObjects is allowed.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void SpawnHost() {
@@ -58,12 +61,11 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     [DefaultExecutionOrder(int.MaxValue)]
     private sealed class Host : MonoBehaviour {
         private void Awake() {
-            Debug.Log($"[{nameof(ServiceManager)}] spike: host alive, dropping the Application.quitting fallback");
             Application.quitting -= HandleApplicationQuitting;
         }
 
         private void OnDestroy() {
-            TearDown("host OnDestroy");
+            TearDown();
         }
     }
 
@@ -71,21 +73,17 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static void OnExitingPlayMode() {
         Application.quitting -= HandleApplicationQuitting;
 
-        // If teardown did not run yet (should not be the case), run it now.
-        if (s_Instance is not null) {
-            TearDown("OnExitingPlayMode fallback");
-        }
+        // Fires after scene teardown, so this only runs when the host never existed.
+        TearDown();
     }
 
     private static void HandleApplicationQuitting() {
-        TearDown("Application.quitting fallback");
+        TearDown();
     }
 
-    private static void TearDown(string trigger) {
+    private static void TearDown() {
         var instance = Interlocked.Exchange(ref s_Instance, null);
-        if (instance is null) return;
-        Debug.Log($"[{nameof(ServiceManager)}] spike: {trigger} -> tearing down");
-        instance.TearDownServiceManager();
+        instance?.TearDownServiceManager();
     }
 
     private void InitializeServiceManager() {

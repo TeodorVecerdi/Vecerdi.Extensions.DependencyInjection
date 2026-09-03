@@ -114,12 +114,11 @@ public class ExistingController : MonoBehaviour
 }
 ```
 
-### 3. That's it
+### 3. Nothing to place
 
-There is no `ServiceManager` component to place. The container builds itself from a
+There is no `ServiceManager` component. The container builds itself from a
 `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]` hook, before any scene loads, so
-every `Awake()` in your first scene already sees a ready provider. If you are upgrading from a version that used a
-`ServiceManager` GameObject, delete it from your scenes.
+every `Awake()` in your first scene already sees a ready provider.
 
 ## Lifecycle
 
@@ -128,8 +127,10 @@ SubsystemRegistration   your RegisterServices / RegisterConfiguration calls (the
 BeforeSplashScreen      ServiceManager builds the provider, runs post-initialization actions,
                         then starts every IHostedService on the thread pool
    (splash screen)      hosted services run while Unity paints the splash
-BeforeSceneLoad / Awake scene MonoBehaviours inject
-Application.quitting    hosted services stop (reverse order), provider is disposed
+BeforeSceneLoad         a hidden host object is spawned (DontDestroyOnLoad, execution order int.MaxValue)
+Awake                   scene MonoBehaviours inject
+quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestroy stops the hosted services
+                        (reverse order) and disposes the provider
 ```
 
 - **`ServiceManager.Instance`** is the built provider. It throws before `BeforeSplashScreen`, so do not resolve
@@ -144,16 +145,15 @@ Application.quitting    hosted services stop (reverse order), provider is dispos
   not touch MonoBehaviour singletons or main-thread-only Unity APIs (`Application.persistentDataPath`, `Screen`,
   `GameObject` creation, …). Hop to the main thread explicitly where one is needed. Services start concurrently,
   so a service that depends on another should model that dependency rather than rely on registration order.
-- **Teardown** runs on `Application.quitting`, before scene objects are destroyed. Stopping the hosted services
-  (reverse registration order) and disposing the provider each get a bounded wait (5 s) so a stuck service cannot
-  hang exit. In the editor, leaving play mode runs the same teardown and clears the instance, so re-entering play
-  mode without a domain reload works.
-- **Do not use services from `OnDestroy`.** `Application.quitting` fires before scene objects are destroyed, so by
-  the time `OnDestroy` runs the provider is disposed and `ServiceManager.Instance` throws. Injected references still
-  hold their objects, so unsubscribing an event or cancelling a token is fine; doing work through a service is not.
-  Shutdown work belongs in `IHostedService.StopAsync`. (Deferring disposal to domain unload was tried: it works in
-  the editor, but the Mono player crashes on exit when the provider is disposed that late, and no hook exists between
-  the last `OnDestroy` and domain unload.)
+- **Teardown** runs from the host object's `OnDestroy`. Unity destroys objects in ascending script execution order,
+  and the host sits at `int.MaxValue`, so every other `OnDisable` and `OnDestroy` runs first and can still use its
+  injected services. Stopping the hosted services (reverse registration order) and disposing the provider each get
+  a bounded wait (5 s) so a stuck service cannot hang exit. Leaving play mode in the editor runs the same path, so
+  re-entering play mode without a domain reload works. If the first scene never loads, `Application.quitting` is the
+  fallback.
+- **Do not give your own scripts `DefaultExecutionOrder(int.MaxValue)`.** Order among equal values is undefined,
+  so such a script may be destroyed after the container is gone. Shutdown work that must run in a defined order
+  belongs in `IHostedService.StopAsync`.
 
 ## Advanced Usage
 
