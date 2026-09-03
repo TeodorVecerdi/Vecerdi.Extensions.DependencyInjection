@@ -1,7 +1,9 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
+using Object = UnityEngine.Object;
 
 namespace Vecerdi.Extensions.DependencyInjection.Internal;
 
@@ -53,9 +55,33 @@ public static class BehaviourServices {
             _ => throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null),
         };
 
-        static T CreateSingleton() => MonoSingleton<T>.Instance;
         static T CreateTransient() => new GameObject(typeof(T).Name).AddComponent<T>();
+
+        static T CreateSingleton() {
+            // A scene-placed instance keeps whatever persistence its author chose. One the container has to create
+            // is application-scoped by definition - and it may be created before the first scene loads (hosted
+            // services, post-initialization actions), which would destroy it along with everything else that is
+            // not DontDestroyOnLoad while the container keeps handing out the dead reference.
+            var existing = Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
+            T instance;
+            try {
+                instance = MonoSingleton<T>.Instance;
+            } catch (InvalidOperationException exception) when (!SceneManager.GetActiveScene().isLoaded) {
+                throw ResolvedBeforeFirstScene(typeof(T), exception);
+            }
+
+            if (existing == null) {
+                Object.DontDestroyOnLoad(instance.gameObject);
+            }
+
+            return instance;
+        }
     }
+
+    private static InvalidOperationException ResolvedBeforeFirstScene(Type type, Exception inner) => new(
+        $"{type.Name} is a scene-placed singleton (MissingSingletonInstanceBehavior.Throw) but was resolved before the first scene loaded. " +
+        "Hosted services and post-initialization actions run before any scene exists; resolve scene-placed singletons from scene code or after ServiceManager.Instance.WhenReady.",
+        inner);
 
     public static MonoBehaviour CreateMonoBehaviour(Type type, ServiceLifetime lifetime) {
         return lifetime switch {
@@ -70,8 +96,21 @@ public static class BehaviourServices {
             var singletonType = typeof(MonoSingleton<>).MakeGenericType(type);
             var instanceProperty = singletonType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static)
                                 ?? throw new InvalidOperationException($"Could not find Instance property on {singletonType.Name}");
-            return (MonoBehaviour)instanceProperty.GetValue(null)
-                ?? throw new InvalidOperationException($"Failed to get instance of {type.Name}");
+            // Same rule as the generic overload: only a container-created instance is made DontDestroyOnLoad.
+            var existing = Object.FindAnyObjectByType(type, FindObjectsInactive.Include);
+            MonoBehaviour instance;
+            try {
+                instance = (MonoBehaviour)instanceProperty.GetValue(null)
+                        ?? throw new InvalidOperationException($"Failed to get instance of {type.Name}");
+            } catch (TargetInvocationException reflected) when (reflected.InnerException is InvalidOperationException exception && !SceneManager.GetActiveScene().isLoaded) {
+                throw ResolvedBeforeFirstScene(type, exception);
+            }
+
+            if (existing == null) {
+                Object.DontDestroyOnLoad(instance.gameObject);
+            }
+
+            return instance;
         }
     }
 
