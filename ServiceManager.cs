@@ -75,6 +75,9 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         s_PostInitializationActions.ForEach(action => action(m_ServiceProvider));
         s_PostInitializationActions.Clear();
 
+        // Hosted services are resolved and started on the thread pool, during the splash screen: their
+        // constructors and the synchronous head of each StartAsync must not touch MonoBehaviour singletons
+        // or main-thread-only Unity APIs. Hop to the main thread explicitly where one is needed.
         Task.Run(StartHostedServicesAsync);
     }
 
@@ -148,7 +151,16 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         if (m_ServiceProvider is null)
             throw new InvalidOperationException("ServiceManager is not initialized yet");
 
-        var logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
+        ILogger<ServiceManager> logger;
+        try {
+            logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
+        } catch (Exception ex) {
+            // The task is discarded by the caller: an exception here would be unobserved and WhenReady would never complete.
+            Debug.LogException(ex);
+            m_ReadyTcs.TrySetResult(true);
+            return;
+        }
+
         try {
             var hostedServices = m_ServiceProvider.GetServices<IHostedService>();
             m_HostedServices.AddRange(hostedServices);
