@@ -9,6 +9,8 @@ See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github
 - 🎯 **Property-based injection** using attributes
 - 🔑 **Keyed services** support for advanced scenarios
 - 🏗️ **MonoBehaviour integration** with automatic service creation
+- 🚀 **Zero scene setup** — the container is built before the splash screen, no bootstrap GameObject
+- 🧵 **Hosted services** (`IHostedService`) started during the splash, stopped on quit
 - ⚡ **Performance optimized** with caching and optional source generation
 - 🎛️ **Configuration management** using Microsoft.Extensions.Configuration
 - 🔄 **Service lifecycle management** (Singleton, Transient)
@@ -16,7 +18,7 @@ See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github
 
 ## Requirements
 
-- Unity 6 or later
+- Unity 6.5 or later (the editor teardown hook uses Unity's built-in play-mode lifecycle attributes, which are not present in 6.2)
 - Modern C# compiler with C# 13+ support
 - [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) to enable modern C# features in Unity
 - The following NuGet packages:
@@ -110,9 +112,40 @@ public class ExistingController : MonoBehaviour
 }
 ```
 
-### 3. Service Manager Setup
+### 3. That's it
 
-Add the `ServiceManager` to a GameObject in your first scene (or create it dynamically). Set its script execution order to as low value such as -10,000 to ensure its lifecycle events run before all other scripts.
+There is no `ServiceManager` component to place. The container builds itself from a
+`[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]` hook, before any scene loads, so
+every `Awake()` in your first scene already sees a ready provider. If you are upgrading from a version that used a
+`ServiceManager` GameObject, delete it from your scenes.
+
+## Lifecycle
+
+```
+SubsystemRegistration   your RegisterServices / RegisterConfiguration calls (they only queue callbacks)
+BeforeSplashScreen      ServiceManager builds the provider, runs post-initialization actions,
+                        then starts every IHostedService on the thread pool
+   (splash screen)      hosted services run while Unity paints the splash
+BeforeSceneLoad / Awake scene MonoBehaviours inject
+Application.quitting    hosted services stop (reverse order), provider is disposed
+```
+
+- **`ServiceManager.Instance`** is the built provider. It throws before `BeforeSplashScreen`, so do not resolve
+  services from `SubsystemRegistration` or `AfterAssembliesLoaded` hooks — queue a post-initialization action
+  instead.
+- **`ServiceManager.RegisterPostInitializationAction(Action<IServiceProvider>)`** runs synchronously on the main
+  thread right after the provider is built and before hosted services start. Use it for one-off wiring that needs
+  resolved services but no scene.
+- **`ServiceManager.Instance.WhenReady`** is a `Task` that completes once every hosted service has finished
+  starting. It never faults: startup failures are logged per service and readiness still completes.
+- **Hosted services start on the thread pool.** Their constructors and the synchronous head of `StartAsync` must
+  not touch MonoBehaviour singletons or main-thread-only Unity APIs (`Application.persistentDataPath`, `Screen`,
+  `GameObject` creation, …). Hop to the main thread explicitly where one is needed. Services start concurrently,
+  so a service that depends on another should model that dependency rather than rely on registration order.
+- **Teardown** runs on `Application.quitting`, before scene objects are destroyed. Stopping the hosted services
+  (reverse registration order) and disposing the provider each get a bounded wait (5 s) so a stuck service cannot
+  hang exit. In the editor, leaving play mode
+  runs the same teardown and clears the instance, so re-entering play mode without a domain reload works.
 
 ## Advanced Usage
 
@@ -181,6 +214,15 @@ public class GameManager : MonoSingleton<GameManager>
 
 - `[Inject(bool isRequired = true)]` - Marks a property for service injection
 - `[InjectFromKeyedServices(object? serviceKey, bool isRequired = true)]` - Injects a keyed service
+
+### ServiceManager
+
+- `RegisterServices(Action<IServiceCollection, IConfigurationManager>)` - Queue service registrations (call from `SubsystemRegistration`)
+- `RegisterConfiguration(Action<IConfigurationManager>)` - Queue configuration sources
+- `RegisterPostInitializationAction(Action<IServiceProvider>)` - Run once the provider is built, before hosted services start
+- `Instance` - The built provider (`IKeyedServiceProvider`); throws before initialization
+- `Instance.WhenReady` - Completes when all hosted services have started
+- `Resolver` - The `ITypeInjectorResolver` used for injection (swap for a generated one)
 
 ### Service Registration Extensions
 
