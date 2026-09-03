@@ -38,23 +38,50 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             throw new InvalidOperationException("ServiceManager was already initialized or its instance was not cleared properly.");
         }
 
+        // Fallback until the host object confirms it is alive (see SpawnHost): if the first scene never loads,
+        // Application.quitting is the only teardown we get.
         Application.quitting += HandleApplicationQuitting;
         BehaviourServices.ResetCachesForEnterPlayMode();
         s_Instance = new ServiceManager();
         s_Instance.InitializeServiceManager();
     }
 
+    // Teardown is owned by a hidden host object and runs from its OnDestroy. Application.quitting fires BEFORE
+    // scene objects are destroyed, which would leave every other OnDestroy/OnDisable with a disposed provider;
+    // OnDestroy honours script execution order (ascending, verified 2026-09-03), so a host at int.MaxValue is
+    // destroyed after every other script and services stay usable throughout teardown. Spawned at
+    // BeforeSceneLoad, the earliest point where creating GameObjects is allowed.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void SpawnHost() {
+        var gameObject = new GameObject("[ServiceManager]") { hideFlags = HideFlags.HideInHierarchy };
+        UnityEngine.Object.DontDestroyOnLoad(gameObject);
+        gameObject.AddComponent<Host>();
+    }
+
+    [DefaultExecutionOrder(int.MaxValue)]
+    private sealed class Host : MonoBehaviour {
+        private void Awake() {
+            Application.quitting -= HandleApplicationQuitting;
+        }
+
+        private void OnDestroy() {
+            TearDown();
+        }
+    }
+
     [OnExitingPlayMode]
     private static void OnExitingPlayMode() {
         Application.quitting -= HandleApplicationQuitting;
 
-        // If teardown did not run yet (should not be the case), run it now.
-        if (s_Instance is not null) {
-            HandleApplicationQuitting();
-        }
+        // Fires after scene teardown, so this only runs when the host never existed.
+        TearDown();
     }
 
     private static void HandleApplicationQuitting() {
+        TearDown();
+    }
+
+    private static void TearDown() {
         var instance = Interlocked.Exchange(ref s_Instance, null);
         instance?.TearDownServiceManager();
     }
