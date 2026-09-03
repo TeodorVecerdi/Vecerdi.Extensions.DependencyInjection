@@ -38,10 +38,33 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             throw new InvalidOperationException("ServiceManager was already initialized or its instance was not cleared properly.");
         }
 
+        // Fallback teardown until the host object confirms it is alive (see SpawnHost).
         Application.quitting += HandleApplicationQuitting;
         BehaviourServices.ResetCachesForEnterPlayMode();
         s_Instance = new ServiceManager();
         s_Instance.InitializeServiceManager();
+    }
+
+    // Spike: a hidden host object owns teardown from its OnDestroy, which runs alongside every other object's
+    // OnDestroy at quit / play-mode exit instead of before them (Application.quitting). Spawned at
+    // BeforeSceneLoad, the earliest point where creating GameObjects is allowed.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void SpawnHost() {
+        var gameObject = new GameObject("[ServiceManager]") { hideFlags = HideFlags.HideInHierarchy };
+        UnityEngine.Object.DontDestroyOnLoad(gameObject);
+        gameObject.AddComponent<Host>();
+    }
+
+    [DefaultExecutionOrder(int.MaxValue)]
+    private sealed class Host : MonoBehaviour {
+        private void Awake() {
+            Debug.Log($"[{nameof(ServiceManager)}] spike: host alive, dropping the Application.quitting fallback");
+            Application.quitting -= HandleApplicationQuitting;
+        }
+
+        private void OnDestroy() {
+            TearDown("host OnDestroy");
+        }
     }
 
     [OnExitingPlayMode]
@@ -50,13 +73,19 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
 
         // If teardown did not run yet (should not be the case), run it now.
         if (s_Instance is not null) {
-            HandleApplicationQuitting();
+            TearDown("OnExitingPlayMode fallback");
         }
     }
 
     private static void HandleApplicationQuitting() {
+        TearDown("Application.quitting fallback");
+    }
+
+    private static void TearDown(string trigger) {
         var instance = Interlocked.Exchange(ref s_Instance, null);
-        instance?.TearDownServiceManager();
+        if (instance is null) return;
+        Debug.Log($"[{nameof(ServiceManager)}] spike: {trigger} -> tearing down");
+        instance.TearDownServiceManager();
     }
 
     private void InitializeServiceManager() {
