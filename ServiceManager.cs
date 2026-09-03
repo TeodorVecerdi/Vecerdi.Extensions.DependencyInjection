@@ -5,22 +5,26 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
+using Vecerdi.Extensions.DependencyInjection.Internal;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
-[DefaultExecutionOrder(-10000)]
-public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServiceProvider {
+public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static readonly TimeSpan s_ShutdownTimeout = TimeSpan.FromSeconds(5);
 
     public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
 
+    public static ServiceManager Instance => s_Instance ?? throw new InvalidOperationException("ServiceManager is not initialized yet");
+
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
     private static readonly List<Action<IConfigurationManager>> s_ConfigurationRegistrations = [];
     private static readonly List<Action<IServiceProvider>> s_PostInitializationActions = [];
-    private IServiceProvider? m_ServiceProvider;
+    private static ServiceManager? s_Instance;
+
     private readonly List<IHostedService> m_HostedServices = [];
     private readonly CancellationTokenSource m_ApplicationStoppingCts = new();
     private readonly TaskCompletionSource<bool> m_ReadyTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private IServiceProvider? m_ServiceProvider;
 
     /// <summary>
     /// Completes once the service provider has been built and all hosted services have finished starting.
@@ -28,9 +32,34 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
     /// </summary>
     public Task WhenReady => m_ReadyTcs.Task;
 
-    protected override void Awake() {
-        base.Awake();
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
+    private static void OnBeforeSplashScreen() {
+        if (s_Instance is not null) {
+            throw new InvalidOperationException("ServiceManager was already initialized or its instance was not cleared properly.");
+        }
 
+        Application.quitting += HandleApplicationQuitting;
+        BehaviourServices.ResetCachesForEnterPlayMode();
+        s_Instance = new ServiceManager();
+        s_Instance.InitializeServiceManager();
+    }
+
+    [OnExitingPlayMode]
+    private static void OnExitingPlayMode() {
+        Application.quitting -= HandleApplicationQuitting;
+
+        // If teardown did not run yet (should not be the case), run it now.
+        if (s_Instance is not null) {
+            HandleApplicationQuitting();
+        }
+    }
+
+    private static void HandleApplicationQuitting() {
+        var instance = Interlocked.Exchange(ref s_Instance, null);
+        instance?.TearDownServiceManager();
+    }
+
+    private void InitializeServiceManager() {
         var configuration = new ConfigurationManager();
         s_ConfigurationRegistrations.ForEach(action => action(configuration));
         s_ConfigurationRegistrations.Clear();
@@ -46,12 +75,10 @@ public sealed class ServiceManager : MonoSingleton<ServiceManager>, IKeyedServic
         s_PostInitializationActions.ForEach(action => action(m_ServiceProvider));
         s_PostInitializationActions.Clear();
 
-        _ = StartHostedServicesAsync();
+        Task.Run(StartHostedServicesAsync);
     }
 
-    protected override void OnDestroy() {
-        base.OnDestroy();
-
+    private void TearDownServiceManager() {
         // Hosted services must finish stopping *before* the provider their dependencies live in is
         // disposed. Blocking the main thread with a bounded wait is intentional here: this runs during
         // teardown, and racing the disposal is worse than a short stall on exit.
