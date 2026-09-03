@@ -75,10 +75,8 @@ public static class BehaviourServices {
         }
     }
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-    private static void ResetCachesForEnterPlayMode() {
+    internal static void ResetCachesForEnterPlayMode() {
         s_InjectedInstances.Clear();
         DependencyInjectionCache.ClearCache();
-        MonoSingleton<ServiceManager>.ResetInstance();
     }
 }
