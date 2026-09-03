@@ -146,8 +146,14 @@ Application.quitting    hosted services stop (reverse order), provider is dispos
   so a service that depends on another should model that dependency rather than rely on registration order.
 - **Teardown** runs on `Application.quitting`, before scene objects are destroyed. Stopping the hosted services
   (reverse registration order) and disposing the provider each get a bounded wait (5 s) so a stuck service cannot
-  hang exit. In the editor, leaving play mode
-  runs the same teardown and clears the instance, so re-entering play mode without a domain reload works.
+  hang exit. In the editor, leaving play mode runs the same teardown and clears the instance, so re-entering play
+  mode without a domain reload works.
+- **Do not use services from `OnDestroy`.** `Application.quitting` fires before scene objects are destroyed, so by
+  the time `OnDestroy` runs the provider is disposed and `ServiceManager.Instance` throws. Injected references still
+  hold their objects, so unsubscribing an event or cancelling a token is fine; doing work through a service is not.
+  Shutdown work belongs in `IHostedService.StopAsync`. (Deferring disposal to domain unload was tried: it works in
+  the editor, but the Mono player crashes on exit when the provider is disposed that late, and no hook exists between
+  the last `OnDestroy` and domain unload.)
 
 ## Advanced Usage
 
