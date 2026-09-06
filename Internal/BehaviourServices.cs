@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
@@ -7,7 +8,8 @@ using Object = UnityEngine.Object;
 
 namespace Vecerdi.Extensions.DependencyInjection.Internal;
 
-public static class BehaviourServices {
+[AutoStaticsCleanup]
+public static partial class BehaviourServices {
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
 
     public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, ITypeInjectorResolver resolver, MonoBehaviour instance) {
@@ -112,10 +114,5 @@ public static class BehaviourServices {
 
             return instance;
         }
-    }
-
-    internal static void ResetCachesForEnterPlayMode() {
-        s_InjectedInstances.Clear();
-        DependencyInjectionCache.ClearCache();
     }
 }

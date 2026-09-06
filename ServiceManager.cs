@@ -3,12 +3,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
-using Vecerdi.Extensions.DependencyInjection.Internal;
+using Object = UnityEngine.Object;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
+[NoAutoStaticsCleanup]
 public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static readonly TimeSpan s_ShutdownTimeout = TimeSpan.FromSeconds(5);
 
@@ -43,7 +45,6 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         // Fallback until the host object confirms it is alive (see SpawnHost): if the first scene never loads,
         // Application.quitting is the only teardown we get.
         Application.quitting += HandleApplicationQuitting;
-        BehaviourServices.ResetCachesForEnterPlayMode();
         s_Instance = new ServiceManager();
         s_Instance.InitializeServiceManager();
     }
@@ -56,7 +57,7 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void SpawnHost() {
         var gameObject = new GameObject("[ServiceManager]") { hideFlags = HideFlags.HideInHierarchy };
-        UnityEngine.Object.DontDestroyOnLoad(gameObject);
+        Object.DontDestroyOnLoad(gameObject);
         gameObject.AddComponent<Host>();
     }
 

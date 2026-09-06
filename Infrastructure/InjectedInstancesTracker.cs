@@ -50,7 +50,7 @@ internal sealed class InjectedInstancesTracker {
 
         var ids = new EntityId[count];
         m_Instances.CopyTo(ids);
-        Span<bool> valid = count <= 1024 ? stackalloc bool[count] : new bool[count];
+        var valid = count <= 1024 ? stackalloc bool[count] : new bool[count];
         Resources.EntityIdsToValidArray(ids, valid);
 
         for (var i = 0; i < count; i++) {
