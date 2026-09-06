@@ -19,6 +19,8 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static readonly List<Action<IServiceCollection, IConfigurationManager>> s_ServiceRegistrations = [];
     private static readonly List<Action<IConfigurationManager>> s_ConfigurationRegistrations = [];
     private static readonly List<Action<IServiceProvider>> s_PostInitializationActions = [];
+    private static readonly List<Action<IServiceProvider>> s_PreTeardownActions = [];
+    private static readonly List<Action> s_PostTeardownActions = [];
     private static ServiceManager? s_Instance;
 
     private readonly List<IHostedService> m_HostedServices = [];
@@ -109,6 +111,9 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     }
 
     private void TearDownServiceManager() {
+        // Registered while the provider was being built, run here with it still fully alive.
+        RunTeardownActions(s_PreTeardownActions, action => action(m_ServiceProvider!));
+
         // Hosted services must finish stopping *before* the provider their dependencies live in is
         // disposed. Blocking the main thread with a bounded wait is intentional here: this runs during
         // teardown, and racing the disposal is worse than a short stall on exit.
@@ -132,6 +137,24 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
 
         m_ServiceProvider = null;
         m_ApplicationStoppingCts.Dispose();
+
+        // The container is gone: this is where anything that pointed at it reverts to its standalone state.
+        RunTeardownActions(s_PostTeardownActions, action => action());
+    }
+
+    // Reverse registration order, each action isolated: a failing action must not stop the rest, and
+    // nothing here may stop the provider from being disposed. The list is cleared so a re-registration
+    // in the next session (play mode without domain reload) does not double up.
+    private static void RunTeardownActions<T>(List<T> actions, Action<T> invoke) {
+        for (var i = actions.Count - 1; i >= 0; i--) {
+            try {
+                invoke(actions[i]);
+            } catch (Exception ex) {
+                Debug.LogException(ex);
+            }
+        }
+
+        actions.Clear();
     }
 
     public static void RegisterServices(Action<IServiceCollection, IConfigurationManager> configuration) {
@@ -144,6 +167,23 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
 
     public static void RegisterPostInitializationAction(Action<IServiceProvider> action) {
         s_PostInitializationActions.Add(action);
+    }
+
+    /// <summary>
+    /// Runs at the start of teardown, before hosted services stop and while the provider is fully usable.
+    /// Mirrors <see cref="RegisterPostInitializationAction"/>: use it to release what was set up there and
+    /// still needs the container to do so. Actions run in reverse registration order.
+    /// </summary>
+    public static void RegisterPreTeardownAction(Action<IServiceProvider> action) {
+        s_PreTeardownActions.Add(action);
+    }
+
+    /// <summary>
+    /// Runs at the end of teardown, after the provider has been disposed. Use it to revert globals that
+    /// were pointed at the container back to their standalone state. Actions run in reverse registration order.
+    /// </summary>
+    public static void RegisterPostTeardownAction(Action action) {
+        s_PostTeardownActions.Add(action);
     }
 
     object? IServiceProvider.GetService(Type serviceType) {
