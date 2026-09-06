@@ -157,14 +157,30 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         actions.Clear();
     }
 
+    /// <summary>
+    /// Registers services with the collection the provider is built from. Runs once, during startup, after
+    /// every <see cref="RegisterConfiguration"/> action, so the configuration passed in is complete. Register
+    /// from a <c>[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]</c> method: the provider is built at
+    /// <c>BeforeSplashScreen</c>, and registrations after that point are ignored until the next session.
+    /// </summary>
     public static void RegisterServices(Action<IServiceCollection, IConfigurationManager> configuration) {
         s_ServiceRegistrations.Add(configuration);
     }
 
+    /// <summary>
+    /// Adds sources and values to the configuration before any service registration sees it. Runs once,
+    /// during startup, before every <see cref="RegisterServices"/> action; the resulting configuration is
+    /// also registered as <c>IConfiguration</c>. Same registration timing as <see cref="RegisterServices"/>.
+    /// </summary>
     public static void RegisterConfiguration(Action<IConfigurationManager> configuration) {
         s_ConfigurationRegistrations.Add(configuration);
     }
 
+    /// <summary>
+    /// Runs right after the provider has been built, on the main thread, before hosted services start. Use it
+    /// to hand container services to static consumers or to construct singletons eagerly. Actions run in
+    /// registration order; the counterpart is <see cref="RegisterPreTeardownAction"/>.
+    /// </summary>
     public static void RegisterPostInitializationAction(Action<IServiceProvider> action) {
         s_PostInitializationActions.Add(action);
     }
