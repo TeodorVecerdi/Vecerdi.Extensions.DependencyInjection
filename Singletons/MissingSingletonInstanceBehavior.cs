@@ -1,4 +1,4 @@
-﻿namespace Vecerdi.Extensions.DependencyInjection;
+namespace Vecerdi.Extensions.DependencyInjection;
 
 public enum MissingSingletonInstanceBehavior {
     Create,

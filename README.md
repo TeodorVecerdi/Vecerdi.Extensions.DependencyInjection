@@ -161,6 +161,42 @@ quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestro
   so such a script may be destroyed after the container is gone. Shutdown work that must run in a defined order
   belongs in `IHostedService.StopAsync`.
 
+## Code lifetime (`Vecerdi.Extensions.Lifetime`)
+
+`Lifetime/` holds a second, independent assembly with no references: `CodeLifetime`, the lifetime of the currently
+loaded code. It ends when the editor reloads code or quits, and when a player quits. The DI container covers one
+play session; with domain reload off, many play sessions run inside one code lifetime. Anything that owns a thread,
+socket, file watcher, timer or long-running loop outside a play session ties its shutdown to it, so nothing outlives
+the code that started it. On CoreCLR that is what lets an unloaded code generation be collected.
+
+```csharp
+using Vecerdi.Extensions.Lifetime;
+
+// Synchronous, on the main thread, with the reason; reverse registration order.
+var registration = CodeLifetime.OnStopping("MyServer", ending => {
+    if (ending == CodeLifetimeEnd.Reload) Suspend(); else Shutdown();
+});
+
+// Long-running loops observe the token.
+while (!CodeLifetime.Stopping.IsCancellationRequested) { ... }
+
+// A stop waits (2 s in total) for tracked work and threads, and reports whatever is still running.
+CodeLifetime.Track("MyServer", backgroundWrite);
+CodeLifetime.Track("MyServer", workerThread);
+```
+
+- **When it stops:** editor quit (`EditorApplication.quitting`, reason `Quit`), code reload (`[OnCodeDeinitializing]`,
+  reason `Reload`), player quit (`Application.quitting`, after `wantsToQuit` approved it). Unity objects are still
+  alive in all three. It stops once; registering afterwards runs the callback immediately.
+- **The order of a stop:** `Stopping` is cancelled, the callbacks run (each isolated; one slower than 100 ms is
+  reported), then tracked work and threads get what is left of the budget. The wait blocks the main thread, so
+  tracked work must not need the main thread to finish.
+- **Stragglers** are reported by owner name: in the editor at `[OnCodeUnloading]`, in a player right after the stop.
+- **Asset import workers** run the same hooks. The lifetime is harmless there, but anything that starts a server
+  should keep its own `AssetDatabase.IsAssetImportWorkerProcess()` check.
+- Reference the `Vecerdi.Extensions.Lifetime` asmdef; it does not pull in the DI assembly or the
+  Microsoft.Extensions packages.
+
 ## Advanced Usage
 
 ### Post-Initialization Callbacks
