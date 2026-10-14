@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Hosting;
-using UnityEngine;
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
+using UnityEngine;
 
 namespace Vecerdi.Extensions.DependencyInjection.Internal;
 
@@ -10,15 +8,10 @@ namespace Vecerdi.Extensions.DependencyInjection.Internal;
 /// <see cref="IHostApplicationLifetime"/> for one play session, driven by <see cref="ServiceManager"/>. Each notification
 /// fires once; a callback that throws is logged and does not keep the others from running.
 /// </summary>
-internal sealed class HostApplicationLifetime : IHostApplicationLifetime {
+internal sealed class HostApplicationLifetime(SynchronizationContext? mainThread) : IHostApplicationLifetime {
     private readonly CancellationTokenSource m_Started = new();
     private readonly CancellationTokenSource m_Stopping = new();
     private readonly CancellationTokenSource m_Stopped = new();
-    private readonly SynchronizationContext? m_MainThread;
-
-    public HostApplicationLifetime(SynchronizationContext? mainThread) {
-        m_MainThread = mainThread;
-    }
 
     /// <summary>Every hosted service has finished starting. Callbacks run on the thread pool.</summary>
     public CancellationToken ApplicationStarted => m_Started.Token;
@@ -37,10 +30,10 @@ internal sealed class HostApplicationLifetime : IHostApplicationLifetime {
     /// leaving play mode in the editor. Safe from any thread.
     /// </summary>
     public void StopApplication() {
-        if (m_MainThread is null || SynchronizationContext.Current == m_MainThread) {
+        if (mainThread is null || SynchronizationContext.Current == mainThread) {
             RequestStop();
         } else {
-            m_MainThread.Post(static _ => RequestStop(), null);
+            mainThread.Post(static _ => RequestStop(), null);
         }
     }
 
@@ -50,9 +43,13 @@ internal sealed class HostApplicationLifetime : IHostApplicationLifetime {
         Notify(m_Started);
     }
 
-    public void NotifyStopping() => Notify(m_Stopping);
+    public void NotifyStopping() {
+        Notify(m_Stopping);
+    }
 
-    public void NotifyStopped() => Notify(m_Stopped);
+    public void NotifyStopped() {
+        Notify(m_Stopped);
+    }
 
     private static void RequestStop() {
 #if UNITY_EDITOR
