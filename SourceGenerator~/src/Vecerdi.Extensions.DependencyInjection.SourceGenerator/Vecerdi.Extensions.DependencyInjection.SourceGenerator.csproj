@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <PackageVersion>1.7.0</PackageVersion>
+        <Version>$(PackageVersion)</Version>
+        <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+
+        <!-- The published DLL is committed: without a PDB it embeds no build path, so it only changes when the code does. -->
+        <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+
+        <NoWarn>$(NoWarn);RS2007</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
+    </ItemGroup>
+
+    <!--
+        A Release build publishes the DLL (+ XML docs) into the DI package's SourceGenerator/ folder, where its .meta
+        labels it RoslynAnalyzer, so the generator Unity loads never drifts from this source.
+    -->
+    <Target Name="PublishToDependencyInjection" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+        <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).xml" DestinationFolder="$(MSBuildThisFileDirectory)..\..\..\SourceGenerator\" SkipUnchangedFiles="true" />
+        <Message Importance="high" Text="Published $(TargetName) $(Version) to DependencyInjection/SourceGenerator/" />
+    </Target>
+
+</Project>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The part of the DI library the generator targets, compiled from its real sources: the [Inject*] attributes and
+        the type-injector infrastructure need no Unity, so the tests run against the code Unity compiles instead of a
+        copy of it. (MonoBehaviour and BaseMonoBehaviour, which do need Unity, are declared by the tests; the generator
+        only matches them by name.)
+    -->
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <ImplicitUsings>disable</ImplicitUsings>
+
+        <!-- The DI library follows the Unity package's conventions, not this solution's analysis rules. -->
+        <AnalysisMode>None</AnalysisMode>
+        <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\..\GlobalUsings.cs;..\..\..\Attributes\*.cs;..\..\..\Infrastructure\ITypeInjector.cs;..\..\..\Infrastructure\ITypeInjectorResolver.cs;..\..\..\Infrastructure\TypeInjectorResolverContext.cs" LinkBase="DependencyInjection" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" />
+    </ItemGroup>
+
+</Project>

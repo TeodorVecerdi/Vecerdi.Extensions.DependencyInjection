@@ -2,7 +2,7 @@
 
 A modern dependency injection library for Unity that brings Microsoft's dependency injection container to Unity projects with seamless integration and automatic service injection.
 
-See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github.com/TeodorVecerdi/Vecerdi.Extensions.DependencyInjection.SourceGenerator) for a more performant and reflection-free solution to injecting services.
+It ships with a [source generator](#source-generated-injection) that replaces reflection-based injection with generated code.
 
 ## Features
 
@@ -243,20 +243,46 @@ public class ReusableController : BaseMonoBehaviour, IAllowsReinitialization
 }
 ```
 
-### Custom Type Injectors
+### Source-generated injection
 
-For optimal performance, you can provide custom type injectors (e.g., from source generators):
+The package ships a source generator (`SourceGenerator/`, built from `SourceGenerator~/`) that Unity applies to every
+assembly referencing this one. In an assembly that declares a `partial` class deriving from
+`TypeInjectorResolverContext`, it generates that class's `GetTypeInjector`: one injector per eligible `MonoBehaviour`
+that assigns its `[Inject]` properties directly, with no reflection.
 
 ```csharp
+using Vecerdi.Extensions.DependencyInjection.Infrastructure;
+
+public partial class GameTypeInjectorResolverContext : TypeInjectorResolverContext;
+
+// Generated injectors first; reflection for anything the context does not cover (other assemblies, excluded types).
 [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-static void SetupCustomResolver()
-{
-    // Replace reflection-based injection with generated code
-    ServiceManager.Resolver = new GeneratedTypeInjectorResolver();
+private static void UseGeneratedInjectors() {
+    ServiceManager.Resolver = new TypeInjectorResolverCombiner(
+        new GameTypeInjectorResolverContext(),
+        new ReflectionTypeInjectorResolver());
 }
 ```
 
-See [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github.com/TeodorVecerdi/Vecerdi.Extensions.DependencyInjection.SourceGenerator) for a source generator that generates all required code for injecting services, removing the need for using reflection.
+- **Eligible types:** non-abstract classes in the same assembly deriving from `MonoBehaviour` that have at least one
+  injectable property, plus every `BaseMonoBehaviour` (one without properties gets a shared no-op injector).
+  `[ExcludeFromInjectionGeneration]` opts a type out, leaving it to the next resolver.
+- **Injectable properties:** exactly one `[Inject]` or `[InjectFromKeyedServices]`, a public, internal or protected
+  internal setter, not `init`-only. Inherited properties are included. `IServiceProvider` properties receive the
+  provider itself; `IEnumerable<T>`, `T[]`, `IReadOnlyList<T>`/`IReadOnlyCollection<T>` and
+  `List<T>`/`IList<T>`/`ICollection<T>` receive every registered `T`.
+- **Service keys:** `string`, `bool`, `char`, the numeric types, or `null`.
+- **One context per assembly.** A generic context is not supported.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| VDI0001 | Warning | Property is `init`-only and cannot be injected |
+| VDI0002 | Warning | Generic context classes are not supported |
+| VDI0003 | Info | More than one context in the assembly |
+| VDI0004 | Info | No eligible types for the context |
+| VDI0005 | Warning | Property has an inaccessible setter |
+| VDI0006 | Error | Property has more than one inject attribute |
+| VDI0007 | Warning | Service key ignored for an `IServiceProvider` property |
 
 ### Singleton MonoBehaviours
 
@@ -302,8 +328,8 @@ public class GameManager : MonoSingleton<GameManager>
 
 ## Performance Notes
 
-- The library uses reflection by default but supports source generators for zero-reflection injection
-- Use the [companion](https://github.com/TeodorVecerdi/Vecerdi.Extensions.DependencyInjection.SourceGenerator) source generator for maximum performance in production builds
+- The library uses reflection by default; the bundled [source generator](#source-generated-injection) removes it
+  for every type a generated context covers
 
 ## License
 

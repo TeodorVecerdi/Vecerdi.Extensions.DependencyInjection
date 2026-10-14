@@ -1,0 +1,6 @@
+artifacts/
+bin/
+obj/
+.idea/
+*.DotSettings.user
+*.binlog
