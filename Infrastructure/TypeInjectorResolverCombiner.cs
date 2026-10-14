@@ -1,4 +1,4 @@
-﻿namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
+namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 public class TypeInjectorResolverCombiner(params ITypeInjectorResolver[] resolvers) : ITypeInjectorResolver {
     public ITypeInjector? GetTypeInjector(Type type) {
