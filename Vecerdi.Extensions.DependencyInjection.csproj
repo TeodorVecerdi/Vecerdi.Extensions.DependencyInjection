@@ -18,6 +18,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Its own assembly in Unity (Lifetime/Vecerdi.Extensions.Lifetime.asmdef), tests included. -->
+        <Compile Remove="Lifetime/**" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\Vecerdi.Extensions.UnityAPI\Vecerdi.Extensions.UnityAPI.csproj" />
     </ItemGroup>
 
