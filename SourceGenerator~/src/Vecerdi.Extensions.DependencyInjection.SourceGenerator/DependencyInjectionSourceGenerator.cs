@@ -288,7 +288,7 @@ public class DependencyInjectionSourceGenerator : IIncrementalGenerator {
         if (value == null) return "null";
         if (value is string s) return $"\"{s.Replace("\"", "\\\"")}\"";
         if (value is bool b) return b ? "true" : "false";
-        if (value is int or uint or long or ulong or short or ushort or byte or sbyte or float or double or decimal) return value.ToString()!;
+        if (value is int or uint or long or ulong or short or ushort or byte or sbyte or float or double or decimal) return value.ToString();
         if (value is char c) return $"'{c}'";
 
         return "null /* Unsupported key type */";

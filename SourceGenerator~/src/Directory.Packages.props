@@ -3,17 +3,18 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.8"/>
-        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.8"/>
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8"/>
-        <PackageVersion Include="JetBrains.Annotations" Version="2025.1.0-eap1"/>
-        <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.8"/>
-        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.8"/>
-        <PackageVersion Include="PolySharp" Version="1.15.0"/>
-
+        <!-- Generator -->
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0"/>
 
+        <!-- The DI API project and the code the generator emits -->
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0"/>
+        <PackageVersion Include="JetBrains.Annotations" Version="2024.3.0"/>
+
+        <!-- Tests: framework -->
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
+        <PackageVersion Include="MSTest.TestAdapter" Version="4.0.2"/>
+        <PackageVersion Include="MSTest.TestFramework" Version="4.0.2"/>
     </ItemGroup>
 </Project>
