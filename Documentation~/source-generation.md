@@ -47,8 +47,50 @@ internal static class InjectionSetup {
 }
 ```
 
-A context only covers its own assembly. With components in several assemblies, declare a context in each and list
-them all in the combiner, reflection last.
+## Several assemblies
+
+A context only covers the assembly it's declared in. With injected components in several assemblies, each one gets its
+own context, and a single place lists them all:
+
+```
+MyGame.Gameplay        ← GameplayTypeInjectorResolverContext
+MyGame.UI              ← UITypeInjectorResolverContext
+MyGame.Debug (editor)  ← DebugTypeInjectorResolverContext
+MyGame.Composition     ← references all three; sets ServiceManager.Resolver
+```
+
+That place is usually an assembly of its own. Setting the resolver means naming every context type, and an assembly
+can't reference one that already references it, so the setup has to sit above all of them: a small composition
+assembly whose asmdef references every assembly with a context (plus this package).
+
+```csharp
+using UnityEngine;
+using Vecerdi.Extensions.DependencyInjection;
+using Vecerdi.Extensions.DependencyInjection.Infrastructure;
+
+namespace MyGame.Composition;
+
+internal static class InjectionSetup {
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void UseGeneratedInjectors() {
+        ServiceManager.Resolver = new TypeInjectorResolverCombiner(
+            new MyGame.Gameplay.GameplayTypeInjectorResolverContext(),
+            new MyGame.UI.UITypeInjectorResolverContext(),
+#if UNITY_EDITOR
+            new MyGame.Debug.DebugTypeInjectorResolverContext(), // not in players
+#endif
+            new ReflectionTypeInjectorResolver());
+    }
+}
+```
+
+- **Contexts must be `public`** so the composition assembly can construct them.
+- **Guard editor-only contexts with `#if UNITY_EDITOR`**, so player builds don't name a type that isn't compiled for
+  them.
+- **Order doesn't matter between contexts**, since each covers a different assembly; only the reflection resolver has
+  to come last.
+- **An assembly without a context falls back to reflection**, including third-party assemblies you can't add one
+  to. That still works, just without the generated speed-up.
 
 ## What gets an injector
 
