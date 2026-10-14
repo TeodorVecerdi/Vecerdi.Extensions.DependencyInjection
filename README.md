@@ -31,7 +31,6 @@ public static class GameServices {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Register() {
         ServiceManager.RegisterServices((services, configuration) => {
-            services.AddLogging();
             services.AddSingleton<IScoreService, ScoreService>();
             services.AddMonoBehaviourSingleton<AudioDirector>();
         });
