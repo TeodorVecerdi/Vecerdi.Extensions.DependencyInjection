@@ -14,7 +14,8 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll",
-        "Microsoft.Extensions.Hosting.Abstractions.dll"
+        "Microsoft.Extensions.Hosting.Abstractions.dll",
+        "Microsoft.Extensions.Configuration.Abstractions.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

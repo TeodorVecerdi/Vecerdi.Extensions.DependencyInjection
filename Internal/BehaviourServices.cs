@@ -24,7 +24,13 @@ public static partial class BehaviourServices {
             throw new InvalidOperationException($"No injector found for type {instance.GetType()}.");
         }
 
-        injector.Inject(serviceProvider, instance);
+        try {
+            injector.Inject(serviceProvider, instance);
+        } catch (Exception exception) {
+            // The inner exception says what is missing; this says who needed it. Unity prints the chain innermost first
+            // and, for an exception escaping Awake, attaches the component (clicking the entry pings it) and disables it.
+            throw new InvalidOperationException($"Could not inject services into {instance.GetType().Name} on '{HierarchyPath(instance.transform)}'.", exception);
+        }
 
         if (instance is IPostInitializationCallbacks callbacks) {
             callbacks.OnServicesInitialized();
@@ -33,6 +39,15 @@ public static partial class BehaviourServices {
         if (!allowsMultiple) {
             MarkInjected(instance);
         }
+    }
+
+    private static string HierarchyPath(Transform transform) {
+        var path = transform.name;
+        for (var parent = transform.parent; parent != null; parent = parent.parent) {
+            path = $"{parent.name}/{path}";
+        }
+
+        return path;
     }
 
     // BaseMonoBehaviour carries its own flag, so the common case never touches the tracker. Any other MonoBehaviour

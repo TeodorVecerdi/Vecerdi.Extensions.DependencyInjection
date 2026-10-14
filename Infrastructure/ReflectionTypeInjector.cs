@@ -11,7 +11,8 @@ internal sealed class ReflectionTypeInjector(Type type) : ITypeInjector {
                 : serviceProvider.GetService(property.PropertyType);
             if (service is null) {
                 if (isRequired) {
-                    throw new InvalidOperationException($"Required service {property.PropertyType} is not registered.");
+                    var key = serviceKey is not null ? $" with key '{serviceKey}'" : "";
+                    throw new InvalidOperationException($"No service for type '{property.PropertyType}'{key} has been registered (property {property.Name}).");
                 }
 
                 continue;

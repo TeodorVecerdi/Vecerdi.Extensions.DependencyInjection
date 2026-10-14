@@ -8,6 +8,7 @@ using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 using Vecerdi.Extensions.DependencyInjection.Internal;
 using Vecerdi.Extensions.Lifetime;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
@@ -69,7 +70,7 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     // editor while playing skips it; the code lifetime's stop (EditorApplication.quitting) covers that path.
     private static void HandleApplicationQuitting() => s_Instance?.m_Lifetime.NotifyStopping();
 
-    private void InitializeServiceManager() {
+    internal void InitializeServiceManager() {
         var configuration = new ConfigurationManager();
         m_Configuration = configuration;
         s_ConfigurationRegistrations.ForEach(action => action(configuration));
@@ -94,7 +95,7 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         m_Startup = Task.Run(StartHostedServicesAsync);
     }
 
-    private void TearDownServiceManager() {
+    internal void TearDownServiceManager() {
         Application.quitting -= HandleApplicationQuitting;
         m_CodeLifetimeRegistration?.Dispose();
 
@@ -230,17 +231,10 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         if (m_ServiceProvider is null)
             throw new InvalidOperationException("ServiceManager is not initialized yet");
 
-        ILogger<ServiceManager> logger;
+        // The task is discarded by the caller: every exception is caught and reported here, or it would go unobserved.
+        ILogger? logger = null;
         try {
-            logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
-        } catch (Exception ex) {
-            // The task is discarded by the caller: an exception here would be unobserved and Started would never fire.
-            Debug.LogException(ex);
-            m_Lifetime.NotifyStarted();
-            return;
-        }
-
-        try {
+            logger = m_ServiceProvider.GetService<ILogger<ServiceManager>>();
             var hostedServices = m_ServiceProvider.GetServices<IHostedService>().ToArray();
             lock (m_HostedServicesGate) {
                 m_HostedServices.AddRange(hostedServices);
@@ -253,11 +247,11 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
                 try {
                     await hostedService.StartAsync(m_Lifetime.ApplicationStopping);
                 } catch (Exception ex) {
-                    logger.LogError(ex, "Error starting hosted service {Name}", hostedService.GetType().Name);
+                    LogError(logger, ex, "Error starting hosted service {Name}", hostedService.GetType().Name);
                 }
             }));
         } catch (Exception ex) {
-            logger.LogError(ex, "Error starting hosted services");
+            LogError(logger, ex, "Error starting hosted services");
         } finally {
             m_Lifetime.NotifyStarted(); // skipped if the session is already stopping
         }
@@ -269,7 +263,7 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
 
         // The caller abandons the wait at the same deadline; this tells the services so, as the Generic Host does.
         using var deadline = new CancellationTokenSource(s_ShutdownTimeout);
-        var logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
+        var logger = m_ServiceProvider.GetService<ILogger<ServiceManager>>();
 
         // A startup still in flight saw ApplicationStopping (it is StartAsync's token) and is winding down. Wait for it,
         // so every service that started gets stopped and none is stopped while its StartAsync still runs. Off the main
@@ -287,8 +281,17 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             try {
                 await hostedServices[i].StopAsync(deadline.Token).ConfigureAwait(false);
             } catch (Exception ex) {
-                logger.LogError(ex, "Error stopping hosted service {Name}", hostedServices[i].GetType().Name);
+                LogError(logger, ex, "Error stopping hosted service {Name}", hostedServices[i].GetType().Name);
             }
+        }
+    }
+
+    // Logging is optional. Without it registered, a failure goes straight to the console; its trace names the service.
+    private static void LogError(ILogger? logger, Exception exception, string message, params object?[] args) {
+        if (logger is not null) {
+            logger.LogError(exception, message, args);
+        } else {
+            Debug.LogException(exception);
         }
     }
 }

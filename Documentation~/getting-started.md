@@ -21,8 +21,8 @@ in a scene.
 - **Modern C#.** The source uses C# 12+ features: Unity 6 with
   [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) on Mono, or Unity 7, which ships them.
 - **NuGet packages** (for example through NuGetForUnity): `Microsoft.Extensions.DependencyInjection`,
-  `Microsoft.Extensions.Hosting.Abstractions`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.Logging`
-  and `PolySharp`.
+  `Microsoft.Extensions.Hosting.Abstractions`, `Microsoft.Extensions.Configuration`,
+  `Microsoft.Extensions.Logging.Abstractions` and `PolySharp`.
 
 ## Installation
 
@@ -42,7 +42,6 @@ callbacks only queue; the container is built at `BeforeSplashScreen` from everyt
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection;
 
@@ -50,7 +49,6 @@ public static class GameServices {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Register() {
         ServiceManager.RegisterServices((services, configuration) => {
-            services.AddLogging();
             services.AddSingleton<IScoreService, ScoreService>();
             services.AddMonoBehaviourSingleton<AudioDirector>();
             services.AddHostedService<SaveGameAutosaver>();
@@ -59,9 +57,8 @@ public static class GameServices {
 }
 ```
 
-> [!WARNING]
-> Register logging (`services.AddLogging(...)`). `ServiceManager` resolves `ILogger<ServiceManager>` before it starts
-> the hosted services; without it, it logs the failure and no hosted service starts.
+Logging is optional. With an `ILogger<T>` registered (`services.AddLogging(...)`), `ServiceManager` reports
+hosted-service failures through it; without one, they go straight to the Unity console.
 
 Split registrations across features with your own `IServiceCollection` extension methods, and call them from one
 composition root.

@@ -73,6 +73,22 @@ inject again.
 > A component instantiated under an inactive parent doesn't run `Awake`, so it isn't injected until it is activated.
 > Call `InjectServices()` on it yourself if you need its services before then.
 
+## When a service is missing
+
+A required service that can't be resolved fails that one component. The exception names the component and its place
+in the hierarchy, and its inner exception says what was missing:
+
+```
+InvalidOperationException: No service for type 'IScoreService' has been registered.
+Rethrow as InvalidOperationException: Could not inject services into ScoreBoard on 'Canvas/HUD/ScoreBoard'.
+```
+
+Thrown from `Awake`, it's handled like any exception escaping `Awake`: Unity logs it with the component attached, so
+clicking the entry selects it, and disables the component, so its `OnEnable`, `Start` and `Update` never run. Other
+components inject as usual. Properties assigned before the failure keep their values, `OnServicesInitialized` isn't
+called, and the component isn't marked as injected, so a later `InjectServices()` tries again. Called from anywhere
+else, `InjectServices()` throws to its caller.
+
 ## After injection
 
 Implement `IPostInitializationCallbacks` to run code once the properties are set, for example when injection is
