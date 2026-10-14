@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
-using Object = UnityEngine.Object;
+using Vecerdi.Extensions.DependencyInjection.Internal;
+using Vecerdi.Extensions.Lifetime;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
@@ -25,16 +26,21 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static readonly List<Action> s_PostTeardownActions = [];
     private static ServiceManager? s_Instance;
 
+    private readonly object m_HostedServicesGate = new();
     private readonly List<IHostedService> m_HostedServices = [];
-    private readonly CancellationTokenSource m_ApplicationStoppingCts = new();
-    private readonly TaskCompletionSource<bool> m_ReadyTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly HostApplicationLifetime m_Lifetime = new(SynchronizationContext.Current);
+    private ConfigurationManager? m_Configuration;
     private IServiceProvider? m_ServiceProvider;
+    private Task m_Startup = Task.CompletedTask;
+    private IDisposable? m_CodeLifetimeRegistration;
 
     /// <summary>
-    /// Completes once the service provider has been built and all hosted services have finished starting.
-    /// This task never faults: hosted-service startup failures are logged and do not prevent readiness.
+    /// The play session's lifetime, also registered as <see cref="IHostApplicationLifetime"/>: Started once every hosted
+    /// service has finished starting (startup failures are logged and do not hold it back; skipped if the session is
+    /// already stopping, so a waiter should also watch Stopping or its own token), Stopping as soon as Unity says the session is ending (every object still alive), Stopped
+    /// once hosted services have stopped, just before the provider is disposed.
     /// </summary>
-    public Task WhenReady => m_ReadyTcs.Task;
+    public IHostApplicationLifetime Lifetime => m_Lifetime;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
     private static void OnBeforeSplashScreen() {
@@ -42,55 +48,30 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             throw new InvalidOperationException("ServiceManager was already initialized or its instance was not cleared properly.");
         }
 
-        // Fallback until the host object confirms it is alive (see SpawnHost): if the first scene never loads,
-        // Application.quitting is the only teardown we get.
         Application.quitting += HandleApplicationQuitting;
         s_Instance = new ServiceManager();
         s_Instance.InitializeServiceManager();
     }
 
-    // Teardown is owned by a hidden host object and runs from its OnDestroy. Application.quitting fires BEFORE
-    // scene objects are destroyed, which would leave every other OnDestroy/OnDisable with a disposed provider;
-    // OnDestroy honours script execution order (ascending, verified 2026-09-03), so a host at int.MaxValue is
-    // destroyed after every other script and services stay usable throughout teardown. Spawned at
-    // BeforeSceneLoad, the earliest point where creating GameObjects is allowed.
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void SpawnHost() {
-        var gameObject = new GameObject("[ServiceManager]") { hideFlags = HideFlags.HideInHierarchy };
-        Object.DontDestroyOnLoad(gameObject);
-        gameObject.AddComponent<Host>();
-    }
-
-    [DefaultExecutionOrder(int.MaxValue)]
-    private sealed class Host : MonoBehaviour {
-        private void Awake() {
-            Application.quitting -= HandleApplicationQuitting;
-        }
-
-        private void OnDestroy() {
-            TearDown();
-        }
-    }
-
+    // Teardown runs from [OnExitingPlayMode]. Probed on 6000.7.0b3, it fires after every OnDisable/OnDestroy on each path
+    // that ends a session: leaving play mode, a player quitting, closing the editor while playing, and recompiling
+    // during play (objects only get OnDisable there; nothing re-creates the container afterwards). The order of OnDestroy
+    // calls on quit is arbitrary, whatever the execution order, so no object can count on being destroyed last; this
+    // hook is what keeps services usable from every OnDisable/OnDestroy.
     [OnExitingPlayMode]
     private static void OnExitingPlayMode() {
-        Application.quitting -= HandleApplicationQuitting;
-
-        // Fires after scene teardown, so this only runs when the host never existed.
-        TearDown();
-    }
-
-    private static void HandleApplicationQuitting() {
-        TearDown();
-    }
-
-    private static void TearDown() {
         var instance = Interlocked.Exchange(ref s_Instance, null);
         instance?.TearDownServiceManager();
     }
 
+    // The session is ending; Stopping goes out now, while every object is still alive, and teardown follows later from
+    // [OnExitingPlayMode]. Fires for a player quit and for leaving play mode (not vetoable in the editor). Closing the
+    // editor while playing skips it; the code lifetime's stop (EditorApplication.quitting) covers that path.
+    private static void HandleApplicationQuitting() => s_Instance?.m_Lifetime.NotifyStopping();
+
     private void InitializeServiceManager() {
         var configuration = new ConfigurationManager();
+        m_Configuration = configuration;
         s_ConfigurationRegistrations.ForEach(action => action(configuration));
         s_ConfigurationRegistrations.Clear();
 
@@ -99,8 +80,10 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         s_ServiceRegistrations.Clear();
 
         services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<IHostApplicationLifetime>(m_Lifetime);
 
         m_ServiceProvider = services.BuildServiceProvider();
+        m_CodeLifetimeRegistration = CodeLifetime.OnStopping(nameof(ServiceManager), _ => m_Lifetime.NotifyStopping());
 
         s_PostInitializationActions.ForEach(action => action(m_ServiceProvider));
         s_PostInitializationActions.Clear();
@@ -108,10 +91,17 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         // Hosted services are resolved and started on the thread pool, during the splash screen: their
         // constructors and the synchronous head of each StartAsync must not touch MonoBehaviour singletons
         // or main-thread-only Unity APIs. Hop to the main thread explicitly where one is needed.
-        Task.Run(StartHostedServicesAsync);
+        m_Startup = Task.Run(StartHostedServicesAsync);
     }
 
     private void TearDownServiceManager() {
+        Application.quitting -= HandleApplicationQuitting;
+        m_CodeLifetimeRegistration?.Dispose();
+
+        // Usually already out (Application.quitting or the code lifetime); first thing otherwise, so the pre-teardown
+        // actions, a startup still in flight and the hosted services all see it.
+        m_Lifetime.NotifyStopping();
+
         // Registered while the provider was being built, run here with it still fully alive.
         RunTeardownActions(s_PreTeardownActions, action => action(m_ServiceProvider!));
 
@@ -126,6 +116,8 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
             Debug.LogException(ex.GetBaseException());
         }
 
+        m_Lifetime.NotifyStopped();
+
         // ReSharper disable SuspiciousTypeConversion.Global
         if (m_ServiceProvider is IAsyncDisposable asyncDisposable) {
             if (!asyncDisposable.DisposeAsync().AsTask().Wait(s_ShutdownTimeout)) {
@@ -137,7 +129,10 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         // ReSharper restore SuspiciousTypeConversion.Global
 
         m_ServiceProvider = null;
-        m_ApplicationStoppingCts.Dispose();
+
+        // Registered as an instance, so the container does not dispose it; its providers' file watchers go with it.
+        m_Configuration?.Dispose();
+        m_Configuration = null;
 
         // The container is gone: this is where anything that pointed at it reverts to its standalone state.
         RunTeardownActions(s_PostTeardownActions, action => action());
@@ -239,21 +234,24 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         try {
             logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
         } catch (Exception ex) {
-            // The task is discarded by the caller: an exception here would be unobserved and WhenReady would never complete.
+            // The task is discarded by the caller: an exception here would be unobserved and Started would never fire.
             Debug.LogException(ex);
-            m_ReadyTcs.TrySetResult(true);
+            m_Lifetime.NotifyStarted();
             return;
         }
 
         try {
-            var hostedServices = m_ServiceProvider.GetServices<IHostedService>();
-            m_HostedServices.AddRange(hostedServices);
+            var hostedServices = m_ServiceProvider.GetServices<IHostedService>().ToArray();
+            lock (m_HostedServicesGate) {
+                m_HostedServices.AddRange(hostedServices);
+            }
 
             // Hosted services start concurrently; services that depend on one another should model the
-            // dependency explicitly rather than relying on registration order.
-            await Task.WhenAll(m_HostedServices.Select(async hostedService => {
+            // dependency explicitly rather than relying on registration order. StartAsync receives
+            // ApplicationStopping, which existing services link as their own stopping token; keep it that way.
+            await Task.WhenAll(hostedServices.Select(async hostedService => {
                 try {
-                    await hostedService.StartAsync(m_ApplicationStoppingCts.Token);
+                    await hostedService.StartAsync(m_Lifetime.ApplicationStopping);
                 } catch (Exception ex) {
                     logger.LogError(ex, "Error starting hosted service {Name}", hostedService.GetType().Name);
                 }
@@ -261,32 +259,36 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         } catch (Exception ex) {
             logger.LogError(ex, "Error starting hosted services");
         } finally {
-            m_ReadyTcs.TrySetResult(true);
+            m_Lifetime.NotifyStarted(); // skipped if the session is already stopping
         }
     }
 
     private async Task StopHostedServicesAsync() {
         if (m_ServiceProvider is null)
             throw new InvalidOperationException("ServiceManager is not initialized yet");
-        if (m_HostedServices.Count == 0)
-            return;
 
+        // The caller abandons the wait at the same deadline; this tells the services so, as the Generic Host does.
+        using var deadline = new CancellationTokenSource(s_ShutdownTimeout);
         var logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
-        try {
-            m_ApplicationStoppingCts.Cancel();
 
-            // Stop services in reverse order
-            for (var i = m_HostedServices.Count - 1; i >= 0; i--) {
-                try {
-                    await m_HostedServices[i].StopAsync(CancellationToken.None);
-                } catch (Exception ex) {
-                    logger.LogError(ex, "Error stopping hosted service {Name}", m_HostedServices[i].GetType().Name);
-                }
-            }
+        // A startup still in flight saw ApplicationStopping (it is StartAsync's token) and is winding down. Wait for it,
+        // so every service that started gets stopped and none is stopped while its StartAsync still runs. Off the main
+        // thread from here on: the main thread is blocked waiting for this method.
+        await m_Startup.ConfigureAwait(false);
 
+        IHostedService[] hostedServices;
+        lock (m_HostedServicesGate) {
+            hostedServices = m_HostedServices.ToArray();
             m_HostedServices.Clear();
-        } catch (Exception ex) {
-            logger.LogError(ex, "Error stopping hosted services");
+        }
+
+        // Stop services in reverse order
+        for (var i = hostedServices.Length - 1; i >= 0; i--) {
+            try {
+                await hostedServices[i].StopAsync(deadline.Token).ConfigureAwait(false);
+            } catch (Exception ex) {
+                logger.LogError(ex, "Error stopping hosted service {Name}", hostedServices[i].GetType().Name);
+            }
         }
     }
 }

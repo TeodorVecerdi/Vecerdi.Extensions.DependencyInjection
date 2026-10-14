@@ -20,6 +20,8 @@
     <ItemGroup>
         <!-- Its own assembly in Unity (Lifetime/Vecerdi.Extensions.Lifetime.asmdef), tests included. -->
         <Compile Remove="Lifetime/**" />
+        <!-- Unity edit-mode tests (Tests/Vecerdi.Extensions.DependencyInjection.Tests.asmdef). -->
+        <Compile Remove="Tests/**" />
     </ItemGroup>
 
     <ItemGroup>

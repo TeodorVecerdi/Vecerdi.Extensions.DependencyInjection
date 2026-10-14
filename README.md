@@ -22,7 +22,8 @@ See also [Vecerdi.Extensions.DependencyInjection.SourceGenerator](https://github
     - **Unity 6.5 or later** with [UnityRoslynUpdater](https://github.com/DaZombieKiller/UnityRoslynUpdater) to
       enable modern C# features (C# 13+) on the Mono runtime
     - **Unity 7 or later**, which runs on CoreCLR and ships the latest C# features out of the box
-- The editor teardown hook uses Unity's built-in play-mode lifecycle attributes, which are not present before 6.5
+- Teardown runs from Unity's built-in play-mode lifecycle attributes (`[OnExitingPlayMode]`, in the editor and in
+  players), which are not present before 6.5
 - The following NuGet packages:
     - PolySharp
     - Microsoft.Extensions.DependencyInjection
@@ -127,10 +128,12 @@ SubsystemRegistration   your RegisterServices / RegisterConfiguration calls (the
 BeforeSplashScreen      ServiceManager builds the provider, runs post-initialization actions,
                         then starts every IHostedService on the thread pool
    (splash screen)      hosted services run while Unity paints the splash
-BeforeSceneLoad         a hidden host object is spawned (DontDestroyOnLoad, execution order int.MaxValue)
+                        ApplicationStarted once every hosted service has started
 Awake                   scene MonoBehaviours inject
-quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestroy stops the hosted services
-                        (reverse order) and disposes the provider
+quit / play-mode exit   ApplicationStopping (Application.quitting, everything still alive)
+                        every OnDisable/OnDestroy runs, services still usable
+[OnExitingPlayMode]     hosted services stop (reverse order), ApplicationStopped,
+                        the provider and the configuration are disposed
 ```
 
 - **`ServiceManager.Instance`** is the built provider. It throws before `BeforeSplashScreen`, so do not resolve
@@ -139,8 +142,6 @@ quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestro
 - **`ServiceManager.RegisterPostInitializationAction(Action<IServiceProvider>)`** runs synchronously on the main
   thread right after the provider is built and before hosted services start. Use it for one-off wiring that needs
   resolved services but no scene.
-- **`ServiceManager.Instance.WhenReady`** is a `Task` that completes once every hosted service has finished
-  starting. It never faults: startup failures are logged per service and readiness still completes.
 - **Hosted services start on the thread pool.** Their constructors and the synchronous head of `StartAsync` must
   not touch MonoBehaviour singletons or main-thread-only Unity APIs (`Application.persistentDataPath`, `Screen`,
   `GameObject` creation, …). Hop to the main thread explicitly where one is needed. Services start concurrently,
@@ -151,15 +152,28 @@ quit / play-mode exit   every OnDisable/OnDestroy runs, then the host's OnDestro
   setting; a scene-placed instance keeps its author's persistence, so give it `Persistence.Application` in any
   project that loads more than one scene. Scene-placed singletons cannot be resolved before the first scene loads
   (a hosted service or post-initialization action that tries gets an exception saying so).
-- **Teardown** runs from the host object's `OnDestroy`. Unity destroys objects in ascending script execution order,
-  and the host sits at `int.MaxValue`, so every other `OnDisable` and `OnDestroy` runs first and can still use its
-  injected services. Stopping the hosted services (reverse registration order) and disposing the provider each get
-  a bounded wait (5 s) so a stuck service cannot hang exit. Leaving play mode in the editor runs the same path, so
-  re-entering play mode without a domain reload works. If the first scene never loads, `Application.quitting` is the
-  fallback.
-- **Do not give your own scripts `DefaultExecutionOrder(int.MaxValue)`.** Order among equal values is undefined,
-  so such a script may be destroyed after the container is gone. Shutdown work that must run in a defined order
-  belongs in `IHostedService.StopAsync`.
+- **`IHostApplicationLifetime`** is registered for the session (also `ServiceManager.Instance.Lifetime`):
+  - `ApplicationStarted`: every hosted service has finished starting; startup failures are logged per service and
+    do not hold it back. Skipped if the session is already stopping, so a waiter should also watch `ApplicationStopping`
+    (or its own token). Callbacks run on the thread pool.
+  - `ApplicationStopping`: the session is ending and every object is still alive. Fired from `Application.quitting`
+    (a player quit, after `wantsToQuit` approved it; leaving play mode); closing the editor while playing skips
+    `Application.quitting`, so the [code lifetime](#code-lifetime-vecerdiextensionslifetime) fires it there. Callbacks
+    run on the main thread. It is also the token every `StartAsync` receives.
+  - `ApplicationStopped`: hosted services have stopped (or timed out); the provider is about to be disposed. Main
+    thread, during teardown: keep callbacks quick.
+  - `StopApplication()` asks Unity to end the session: `Application.Quit()` in a player (vetoable through
+    `wantsToQuit`), leaving play mode in the editor.
+- **Teardown** runs from `[OnExitingPlayMode]`, which comes after every `OnDisable`/`OnDestroy` on each path that ends
+  a session: leaving play mode, a player quitting, closing the editor while playing, and recompiling during play
+  (objects only get `OnDisable` there, and nothing re-creates the container afterwards). Every script can therefore
+  use its injected services from `OnDisable` and `OnDestroy`. The order of `OnDestroy` calls on quit is arbitrary,
+  whatever the script execution order, so no object can stand in for this. Stopping the hosted services (reverse
+  registration order, with a token that cancels at the deadline) and disposing the provider each get a bounded wait
+  (5 s) so a stuck service cannot hang exit. The main thread is blocked during that wait: a `StopAsync` that needs
+  the main thread to complete cannot, and the rest may run on the thread pool. Leaving play mode runs the same path,
+  so re-entering play mode without a domain reload works.
+- **Shutdown work that must run in a defined order** belongs in `IHostedService.StopAsync`.
 
 ## Code lifetime (`Vecerdi.Extensions.Lifetime`)
 
@@ -271,7 +285,7 @@ public class GameManager : MonoSingleton<GameManager>
 - `RegisterConfiguration(Action<IConfigurationManager>)` - Queue configuration sources
 - `RegisterPostInitializationAction(Action<IServiceProvider>)` - Run once the provider is built, before hosted services start
 - `Instance` - The built provider (`IKeyedServiceProvider`); throws before initialization
-- `Instance.WhenReady` - Completes when all hosted services have started
+- `Instance.Lifetime` - The session's `IHostApplicationLifetime` (also resolvable from the container)
 - `Resolver` - The `ITypeInjectorResolver` used for injection (swap for a generated one)
 
 ### Service Registration Extensions

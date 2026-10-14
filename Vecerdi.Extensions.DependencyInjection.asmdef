@@ -1,7 +1,9 @@
 {
     "name": "Vecerdi.Extensions.DependencyInjection",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Vecerdi.Extensions.Lifetime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

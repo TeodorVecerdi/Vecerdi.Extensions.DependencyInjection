@@ -82,7 +82,7 @@ public static partial class BehaviourServices {
 
     private static InvalidOperationException ResolvedBeforeFirstScene(Type type, Exception inner) => new(
         $"{type.Name} is a scene-placed singleton (MissingSingletonInstanceBehavior.Throw) but was resolved before the first scene loaded. " +
-        "Hosted services and post-initialization actions run before any scene exists; resolve scene-placed singletons from scene code or after ServiceManager.Instance.WhenReady.",
+        "Hosted services and post-initialization actions run before any scene exists; resolve scene-placed singletons from scene code or after IHostApplicationLifetime.ApplicationStarted.",
         inner);
 
     public static MonoBehaviour CreateMonoBehaviour(Type type, ServiceLifetime lifetime) {
