@@ -1,3 +1,0 @@
-[submodule "src/Vecerdi.Extensions.DependencyInjection"]
-	path = src/Vecerdi.Extensions.DependencyInjection
-	url = https://github.com/TeodorVecerdi/Vecerdi.Extensions.DependencyInjection.git
