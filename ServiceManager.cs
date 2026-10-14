@@ -29,21 +29,15 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private readonly object m_HostedServicesGate = new();
     private readonly List<IHostedService> m_HostedServices = [];
     private readonly HostApplicationLifetime m_Lifetime = new(SynchronizationContext.Current);
-    private readonly TaskCompletionSource<bool> m_ReadyTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private ConfigurationManager? m_Configuration;
     private IServiceProvider? m_ServiceProvider;
     private Task m_Startup = Task.CompletedTask;
     private IDisposable? m_CodeLifetimeRegistration;
 
     /// <summary>
-    /// Completes once the service provider has been built and all hosted services have finished starting.
-    /// This task never faults: hosted-service startup failures are logged and do not prevent readiness.
-    /// </summary>
-    public Task WhenReady => m_ReadyTcs.Task;
-
-    /// <summary>
     /// The play session's lifetime, also registered as <see cref="IHostApplicationLifetime"/>: Started once every hosted
-    /// service has started, Stopping as soon as Unity says the session is ending (every object still alive), Stopped
+    /// service has finished starting (startup failures are logged and do not hold it back; skipped if the session is
+    /// already stopping, so a waiter should also watch Stopping or its own token), Stopping as soon as Unity says the session is ending (every object still alive), Stopped
     /// once hosted services have stopped, just before the provider is disposed.
     /// </summary>
     public IHostApplicationLifetime Lifetime => m_Lifetime;
@@ -240,9 +234,8 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         try {
             logger = m_ServiceProvider.GetRequiredService<ILogger<ServiceManager>>();
         } catch (Exception ex) {
-            // The task is discarded by the caller: an exception here would be unobserved and WhenReady would never complete.
+            // The task is discarded by the caller: an exception here would be unobserved and Started would never fire.
             Debug.LogException(ex);
-            m_ReadyTcs.TrySetResult(true);
             m_Lifetime.NotifyStarted();
             return;
         }
@@ -266,7 +259,6 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         } catch (Exception ex) {
             logger.LogError(ex, "Error starting hosted services");
         } finally {
-            m_ReadyTcs.TrySetResult(true);
             m_Lifetime.NotifyStarted(); // skipped if the session is already stopping
         }
     }

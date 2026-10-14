@@ -142,8 +142,6 @@ quit / play-mode exit   ApplicationStopping (Application.quitting, everything st
 - **`ServiceManager.RegisterPostInitializationAction(Action<IServiceProvider>)`** runs synchronously on the main
   thread right after the provider is built and before hosted services start. Use it for one-off wiring that needs
   resolved services but no scene.
-- **`ServiceManager.Instance.WhenReady`** is a `Task` that completes once every hosted service has finished
-  starting. It never faults: startup failures are logged per service and readiness still completes.
 - **Hosted services start on the thread pool.** Their constructors and the synchronous head of `StartAsync` must
   not touch MonoBehaviour singletons or main-thread-only Unity APIs (`Application.persistentDataPath`, `Screen`,
   `GameObject` creation, …). Hop to the main thread explicitly where one is needed. Services start concurrently,
@@ -155,8 +153,9 @@ quit / play-mode exit   ApplicationStopping (Application.quitting, everything st
   project that loads more than one scene. Scene-placed singletons cannot be resolved before the first scene loads
   (a hosted service or post-initialization action that tries gets an exception saying so).
 - **`IHostApplicationLifetime`** is registered for the session (also `ServiceManager.Instance.Lifetime`):
-  - `ApplicationStarted`: every hosted service has started (the token form of `WhenReady`; skipped if the session is
-    already stopping). Callbacks run on the thread pool.
+  - `ApplicationStarted`: every hosted service has finished starting; startup failures are logged per service and
+    do not hold it back. Skipped if the session is already stopping, so a waiter should also watch `ApplicationStopping`
+    (or its own token). Callbacks run on the thread pool.
   - `ApplicationStopping`: the session is ending and every object is still alive. Fired from `Application.quitting`
     (a player quit, after `wantsToQuit` approved it; leaving play mode); closing the editor while playing skips
     `Application.quitting`, so the [code lifetime](#code-lifetime-vecerdiextensionslifetime) fires it there. Callbacks
@@ -286,7 +285,6 @@ public class GameManager : MonoSingleton<GameManager>
 - `RegisterConfiguration(Action<IConfigurationManager>)` - Queue configuration sources
 - `RegisterPostInitializationAction(Action<IServiceProvider>)` - Run once the provider is built, before hosted services start
 - `Instance` - The built provider (`IKeyedServiceProvider`); throws before initialization
-- `Instance.WhenReady` - Completes when all hosted services have started
 - `Instance.Lifetime` - The session's `IHostApplicationLifetime` (also resolvable from the container)
 - `Resolver` - The `ITypeInjectorResolver` used for injection (swap for a generated one)
 
