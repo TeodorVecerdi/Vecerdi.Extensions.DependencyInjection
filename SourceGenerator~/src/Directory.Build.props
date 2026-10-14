@@ -1,4 +1,14 @@
 <Project>
+    <!--
+      When nested inside a parent repo, chain into its Directory.Build.props so shared settings
+      such as the redirected artifacts output apply (MediaVault routes every project under Assets/
+      into its root artifacts/). Standalone checkouts find no parent file and skip the import; the
+      settings below override anything the parent sets.
+    -->
+    <PropertyGroup>
+        <_ParentDirectoryBuildProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</_ParentDirectoryBuildProps>
+    </PropertyGroup>
+    <Import Project="$(_ParentDirectoryBuildProps)" Condition="'$(_ParentDirectoryBuildProps)' != '' And Exists('$(_ParentDirectoryBuildProps)')"/>
     <!-- General -->
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -64,8 +74,8 @@
         </NoWarn>
     </PropertyGroup>
 
-    <!-- Artifacts -->
-    <PropertyGroup>
+    <!-- Artifacts: fallback for standalone checkouts; a chained parent props may have set this already -->
+    <PropertyGroup Condition="'$(ArtifactsPath)' == ''">
         <UseArtifactsOutput>true</UseArtifactsOutput>
         <ArtifactsPath>$(MSBuildThisFileDirectory)../artifacts/</ArtifactsPath>
     </PropertyGroup>

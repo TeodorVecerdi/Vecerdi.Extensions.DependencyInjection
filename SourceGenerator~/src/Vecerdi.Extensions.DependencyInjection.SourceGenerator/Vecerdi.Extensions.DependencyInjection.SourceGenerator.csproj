@@ -10,6 +10,9 @@
         <Version>$(PackageVersion)</Version>
         <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 
+        <!-- The published DLL is committed: without a PDB it embeds no build path, so it only changes when the code does. -->
+        <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+
         <NoWarn>$(NoWarn);RS2007</NoWarn>
     </PropertyGroup>
 
