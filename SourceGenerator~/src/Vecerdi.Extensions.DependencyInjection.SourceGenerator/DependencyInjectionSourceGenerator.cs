@@ -154,7 +154,7 @@ public class DependencyInjectionSourceGenerator : IIncrementalGenerator {
                                        """);
                 foreach (var (type, properties) in eligibleTypes) {
                     var typeName = GetUniqueTypeName(type, typeNames, usedTypeNames);
-                    var typeFullName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", "");
+                    var typeFullName = GetRuntimeFullName(type);
 
                     // Use NoOpInjector for types without injectable properties
                     if (properties.Count == 0) {
@@ -281,6 +281,19 @@ public class DependencyInjectionSourceGenerator : IIncrementalGenerator {
         usedTypeNames.Add(typeName);
         typeMap[fullTypeName] = typeName;
         return typeName;
+    }
+
+    // Helper: the name Type.FullName reports at runtime, which the generated switch is matched against. Display strings
+    // join nested types with '.', but the runtime joins them with '+' (and uses metadata names, e.g. `1 for arity).
+    private static string GetRuntimeFullName(INamedTypeSymbol typeSymbol) {
+        var name = typeSymbol.MetadataName;
+        for (var containing = typeSymbol.ContainingType; containing != null; containing = containing.ContainingType) {
+            name = $"{containing.MetadataName}+{name}";
+        }
+
+        return typeSymbol.ContainingNamespace is { IsGlobalNamespace: false } containingNamespace
+            ? $"{containingNamespace.ToDisplayString()}.{name}"
+            : name;
     }
 
     // Helper: Format object? as C# literal for codegen
