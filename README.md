@@ -72,4 +72,4 @@ Unity 6.5 or later, and C# 12+ language features (Unity 6 with
 
 ## License
 
-MIT, with additional terms regarding AI usage. See [LICENSE](LICENSE).
+[MIT](LICENSE).
