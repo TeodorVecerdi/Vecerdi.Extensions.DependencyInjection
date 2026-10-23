@@ -75,6 +75,10 @@ public static partial class BehaviourServices {
         static T CreateTransient() => new GameObject(typeof(T).Name).AddComponent<T>();
 
         static T CreateSingleton() {
+            if (MonoSingleton<T>.InstanceExists) {
+                return MonoSingleton<T>.Instance;
+            }
+
             // A scene-placed instance keeps whatever persistence its author chose. One the container has to create
             // is application-scoped by definition - and it may be created before the first scene loads (hosted
             // services, post-initialization actions), which would destroy it along with everything else that is
