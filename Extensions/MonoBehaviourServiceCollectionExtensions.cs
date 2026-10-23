@@ -46,16 +46,6 @@ public static class MonoBehaviourServiceCollectionExtensions {
             return services;
         }
 
-        public IServiceCollection AddKeyedMonoBehaviourSingleton<T>(object? serviceKey) where T : MonoBehaviour {
-            services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
-                var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Singleton);
-                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-                return instance;
-            }, ServiceLifetime.Singleton));
-
-            return services;
-        }
-
         public IServiceCollection AddKeyedMonoBehaviourSingleton<TInterface, TImplementation>(object? serviceKey) where TImplementation : MonoBehaviour, TInterface {
             services.Add(new ServiceDescriptor(typeof(TInterface), serviceKey, (sp, _) => {
                 var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
