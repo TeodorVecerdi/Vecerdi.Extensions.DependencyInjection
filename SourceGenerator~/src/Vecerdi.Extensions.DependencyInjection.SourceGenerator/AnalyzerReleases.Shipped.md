@@ -1,3 +1,11 @@
+## Release 1.8.0
+
+### New Rules
+
+| Rule ID | Category | Severity | Notes                                                 |
+|---------|----------|----------|-------------------------------------------------------|
+| VDI0008 | Usage    | Warning  | Factory registration caches a MonoBehaviour singleton |
+
 ## Release 1.4.0
 
 ### New Rules

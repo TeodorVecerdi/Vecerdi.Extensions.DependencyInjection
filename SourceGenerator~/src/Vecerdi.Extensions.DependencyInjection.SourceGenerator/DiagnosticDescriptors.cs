@@ -65,4 +65,13 @@ public static class DiagnosticDescriptors {
         DiagnosticSeverity.Warning,
         true
     );
+
+    public static readonly DiagnosticDescriptor CachedMonoBehaviourSingleton = new(
+        "VDI0008",
+        "Factory registration caches a MonoBehaviour singleton",
+        "'{0}' is a MonoBehaviour singleton, and this {1} registration caches what its factory resolves from it, which goes stale once Unity destroys the instance; register it with AddMonoBehaviourSingleton instead",
+        DiagnosticCategory.Usage,
+        DiagnosticSeverity.Warning,
+        true
+    );
 }

@@ -115,8 +115,9 @@ internal static class InjectionSetup {
 | VDI0005 | Warning | The property's setter isn't accessible to generated code |
 | VDI0006 | Error | The property has more than one inject attribute |
 | VDI0007 | Warning | A service key on an `IServiceProvider` property is ignored |
+| VDI0008 | Warning | A `Singleton` or `Scoped` factory registration resolves a `MonoSingleton<T>` and caches it; see [MonoBehaviour services](monobehaviour-services.md#how-singletons-resolve) |
 
-A property reported with a warning is skipped, not injected by reflection instead: the type as a whole is covered by
+A property reported with a warning (VDI0001, VDI0005) is skipped, not injected by reflection instead: the type as a whole is covered by
 its generated injector.
 
 ## Building the generator

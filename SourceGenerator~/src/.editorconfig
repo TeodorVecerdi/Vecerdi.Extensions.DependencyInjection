@@ -365,3 +365,7 @@ resharper_redundant_anonymous_type_property_name_highlighting = none
 resharper_partial_type_with_single_part_highlighting = suggestion
 resharper_not_accessed_positional_property_local_highlighting = suggestion
 resharper_unused_member_local_highlighting = suggestion
+resharper_lambda_expression_can_be_made_static_highlighting = none
+
+[Vecerdi.Extensions.DependencyInjection.SourceGenerator/MonoBehaviourSingleton/*.cs]
+dotnet_diagnostic.IDE0130.severity = none
