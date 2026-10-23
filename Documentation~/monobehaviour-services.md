@@ -7,6 +7,7 @@ sources:
   - Extensions/MonoBehaviourServiceCollectionExtensions.cs
   - Internal/BehaviourServices.cs
   - Singletons/
+  - SourceGenerator~/src/Vecerdi.Extensions.DependencyInjection.SourceGenerator/MonoBehaviourSingletonFactory.cs
 ---
 
 # MonoBehaviour services
@@ -62,6 +63,24 @@ a scene-placed singleton, the next resolve returns the one the new scene brought
 > that took the component in its constructor, a static field, an `[Inject]` property on an application-scoped
 > component. Hand a `Scene`-persistence singleton only to consumers that are destroyed with the same scene, or make it
 > `Application`-persistent.
+
+A factory registration is the most common way to store the old reference by accident: the container caches whatever a
+`Singleton` or `Scoped` factory returns. The bundled analyzer reports one that resolves a `MonoSingleton<T>` as
+**VDI0008**, and its code fix rewrites the registration onto `AddMonoBehaviourSingleton`:
+
+```csharp
+// VDI0008
+services.AddSingleton<IAudioDirector>(sp => sp.GetRequiredService<AudioDirector>());
+services.AddSingleton<IMixer>(sp => sp.GetRequiredService<AudioDirector>().Mixer);
+
+// Fixed
+services.AddMonoBehaviourSingleton<IAudioDirector, AudioDirector>();
+services.AddMonoBehaviourSingleton<IMixer, AudioDirector>(audioDirector => audioDirector.Mixer);
+```
+
+The analyzer recognises a singleton component by its `MonoSingleton<T>` base type, so it doesn't see a factory that
+resolves a plain `MonoBehaviour` registered with `AddMonoBehaviourSingleton`, or one that resolves the component
+through an interface. A factory that also resolves other services is reported without a fix.
 
 ## Exposing part of a singleton
 
