@@ -4,8 +4,8 @@ description: The bundled source generator - declaring a context, wiring the reso
 order: 5
 tags: [injection, source-generation]
 sources:
-  - SourceGenerator/
-  - SourceGenerator~/src/Vecerdi.Extensions.DependencyInjection.SourceGenerator/
+  - Analyzers/
+  - Analyzers~/src/Vecerdi.Extensions.DependencyInjection.Analyzers/
   - Infrastructure/TypeInjectorResolverContext.cs
   - Attributes/ExcludeFromInjectionGenerationAttribute.cs
 ---
@@ -122,12 +122,13 @@ its generated injector.
 
 ## Building the generator
 
-The generator's source, tests and solution live in `SourceGenerator~/` (Unity ignores it); `SourceGenerator/` holds
-the built DLL. A Release build republishes it:
+The generator ships in the package's Roslyn DLL, `Vecerdi.Extensions.DependencyInjection.Analyzers`, together with the
+VDI0008 analyzer. Its source, tests and solution live in `Analyzers~/` (Unity ignores it); `Analyzers/` holds the built
+DLL. A Release build republishes it:
 
 ```sh
-dotnet test SourceGenerator~/src/Vecerdi.Extensions.DependencyInjection.SourceGenerator.slnx
-dotnet build SourceGenerator~/src/Vecerdi.Extensions.DependencyInjection.SourceGenerator -c Release
+dotnet test Analyzers~/src/Vecerdi.Extensions.DependencyInjection.Analyzers.slnx
+dotnet build Analyzers~/src/Vecerdi.Extensions.DependencyInjection.Analyzers -c Release
 ```
 
 ## See also

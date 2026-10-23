@@ -1,4 +1,4 @@
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 /// <summary>How a flagged registration can be rewritten, if at all.</summary>
 internal enum MonoBehaviourSingletonFactoryFix {

@@ -367,5 +367,6 @@ resharper_not_accessed_positional_property_local_highlighting = suggestion
 resharper_unused_member_local_highlighting = suggestion
 resharper_lambda_expression_can_be_made_static_highlighting = none
 
-[Vecerdi.Extensions.DependencyInjection.SourceGenerator/MonoBehaviourSingleton/*.cs]
+# Folders group files by kind (as in UnityCore's analyzers) and are not namespace segments.
+[{Vecerdi.Extensions.DependencyInjection.Analyzers,Vecerdi.Extensions.DependencyInjection.Analyzers.Tests}/**.cs]
 dotnet_diagnostic.IDE0130.severity = none

@@ -33,7 +33,7 @@ The package is embedded rather than installed from a registry: add the repositor
 |---|---|---|
 | `Vecerdi.Extensions.DependencyInjection` | package root | The container, injection, `MonoBehaviour` integration |
 | `Vecerdi.Extensions.Lifetime` | `Lifetime/` | [Code lifetime](code-lifetime.md); no references, usable on its own |
-| Source generator DLL | `SourceGenerator/` | [Source-generated injection](source-generation.md), applied automatically |
+| `Vecerdi.Extensions.DependencyInjection.Analyzers` | `Analyzers/` | Roslyn DLL, applied automatically: the [injector generator](source-generation.md) and the [VDI0008 analyzer](monobehaviour-services.md#how-singletons-resolve) |
 
 ## Registering services
 

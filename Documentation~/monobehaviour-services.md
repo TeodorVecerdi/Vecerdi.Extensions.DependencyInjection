@@ -7,7 +7,8 @@ sources:
   - Extensions/MonoBehaviourServiceCollectionExtensions.cs
   - Internal/BehaviourServices.cs
   - Singletons/
-  - SourceGenerator~/src/Vecerdi.Extensions.DependencyInjection.SourceGenerator/MonoBehaviourSingletonFactory.cs
+  - Analyzers~/src/Vecerdi.Extensions.DependencyInjection.Analyzers/Analyzers/
+  - Analyzers~/src/Vecerdi.Extensions.DependencyInjection.Analyzers/FixProviders/
 ---
 
 # MonoBehaviour services

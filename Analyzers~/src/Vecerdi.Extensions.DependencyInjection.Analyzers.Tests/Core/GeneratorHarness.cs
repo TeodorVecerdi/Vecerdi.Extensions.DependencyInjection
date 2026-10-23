@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator.Tests;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers.Tests;
 
 /// <summary>The generated source (every context's file joined; null when nothing was generated) and the diagnostics.</summary>
 public sealed record GeneratorRun(string? Generated, ImmutableArray<Diagnostic> GeneratorDiagnostics, ImmutableArray<Diagnostic> CompilationErrors) {

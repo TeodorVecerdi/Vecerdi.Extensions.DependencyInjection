@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 /// <summary>A container-cached factory registration whose lambda resolves a MonoBehaviour singleton.</summary>
 internal sealed class MonoBehaviourSingletonFactoryFinding(
