@@ -6,7 +6,7 @@ using Unity.Scripting.LifecycleManagement;
 namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 
 [NoAutoStaticsCleanup]
-internal static class DependencyInjectionCache {
+internal static partial class DependencyInjectionCache {
     private static readonly ConcurrentDictionary<Type, CacheInfo> s_Cache = new();
 
     public static IReadOnlyList<(PropertyInfo PropertyInfo, object? ServiceKey, bool IsRequired)> GetInjectableProperties(Type type) {
@@ -26,4 +26,7 @@ internal static class DependencyInjectionCache {
                     .Select(t => (t.Property, t.KeyedAttribute?.ServiceKey, t.Attribute?.IsRequired ?? t.KeyedAttribute!.IsRequired || IsRequired(t.Property))),
             ];
     }
+
+    [ClearCacheBetweenCodeLoads]
+    private static void ClearCache() => s_Cache.Clear();
 }

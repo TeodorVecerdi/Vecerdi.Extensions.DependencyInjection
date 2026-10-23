@@ -101,6 +101,8 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static void OnExitingPlayMode() {
         var instance = Interlocked.Exchange(ref s_Instance, null);
         instance?.TearDownServiceManager();
+        Resolver = new ReflectionTypeInjectorResolver();
+        ValidateSceneSingletons = true;
     }
 
     // The session is ending; Stopping goes out now, while every object is still alive, and teardown follows later from
