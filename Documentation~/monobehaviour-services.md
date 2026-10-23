@@ -13,7 +13,7 @@ sources:
 
 Components can be services too: an audio director, a dialog host, anything other services need to reach. The
 `AddMonoBehaviour*` extensions register a `MonoBehaviour` type, and the container finds or creates the component when
-the service is first resolved.
+the service is resolved.
 
 ## Registering components
 
@@ -26,24 +26,65 @@ services.AddMonoBehaviourTransient<FloatingText>();
 
 | Lifetime | What a resolve does |
 |---|---|
-| Singleton | Uses the instance in the loaded scenes, inactive ones included; if there is none, creates a `GameObject` with the component |
+| Singleton | Returns the current instance in the loaded scenes, inactive ones included; if there is none, creates a `GameObject` with the component |
 | Transient | Creates a new `GameObject` with the component every time |
 
-Every registration comes in the forms shown above (`<T>`, `<TInterface, TImplementation>`, keyed), plus overloads
-taking a `Type` for registration by reflection.
+Singletons register as `<T>` or `<TService, TSingleton>`, the latter also keyed, plus the selector forms in
+[Exposing part of a singleton](#exposing-part-of-a-singleton). Transients register as `<T>` or
+`<TInterface, TImplementation>`, both also keyed.
+
+To expose one singleton under several services, register it once per service. Every registration resolves the same
+instance:
+
+```csharp
+services.AddMonoBehaviourSingleton<AudioDirector>();
+services.AddMonoBehaviourSingleton<IAudioDirector, AudioDirector>();
+```
 
 A resolved component is still a normal `MonoBehaviour`: it wakes up, and if it derives from `BaseMonoBehaviour` it
 receives its own `[Inject]` properties.
 
-## Singleton lifetime
+## How singletons resolve
 
-The container caches a singleton once and never re-creates it, so the component must outlive every scene load:
+The container does not cache a singleton component. Every resolve asks `MonoSingleton<T>` for the current instance,
+which keeps the reference itself and looks the component up again once Unity destroys it. After a scene load destroys
+a scene-placed singleton, the next resolve returns the one the new scene brought.
 
 - **A singleton the container creates** is made `DontDestroyOnLoad`: it is application-scoped by definition, and it
   may be created before the first scene even loads (by a hosted service, say).
-- **A scene-placed singleton** keeps the persistence its author chose. In a project that loads more than one scene,
-  make it application-scoped (below); otherwise the next scene load destroys it and the container keeps handing out
-  the dead reference.
+- **A scene-placed singleton** keeps the persistence its author chose (see the settings below).
+- **Services are injected once per instance**, from the container itself rather than from the scope that resolved
+  it, so a component that outlives the scope never holds that scope's services. A replacement instance gets its own
+  injection on its first resolve.
+
+> [!WARNING]
+> The container follows a replacement, but a consumer that stored the old reference does not: a singleton service
+> that took the component in its constructor, a static field, an `[Inject]` property on an application-scoped
+> component. Hand a `Scene`-persistence singleton only to consumers that are destroyed with the same scene, or make it
+> `Application`-persistent.
+
+## Exposing part of a singleton
+
+When the service is something the component owns rather than the component itself, register a selector. It receives
+the current instance on every resolve:
+
+```csharp
+services.AddMonoBehaviourSingleton((AudioDirector director) => director.Mixer);
+services.AddKeyedMonoBehaviourSingleton<IAudioChannel, AudioDirector>(KeyedService.AnyKey,
+    (director, key) => director.GetChannel((string)key!));
+```
+
+Because the selector runs on every resolve, return state the component owns; don't construct something new in it.
+The keyed form also receives the key the consumer asked for, so one registration under `KeyedService.AnyKey` can
+serve every key.
+
+## Disposable components
+
+A singleton component can't implement `IDisposable` or `IAsyncDisposable`, and neither can what a selector returns.
+The container would track the object for disposal on every resolve and dispose it that many times when it shuts down.
+Registering such a type throws `NotSupportedException`. For a selector whose declared service type isn't disposable,
+the exception comes from the first resolve that returns a disposable object. Release resources in `OnDestroy`
+instead.
 
 ## Static access with MonoSingleton
 
@@ -71,6 +112,9 @@ the first lookup):
 | `Persistence` | `Scene` (destroyed with its scene) or `Application` (`DontDestroyOnLoad`) | `Scene` |
 
 `InstanceExists` and `InstanceOrNull` check for the instance without creating one.
+
+A component registered as a singleton without deriving from `MonoSingleton<T>` resolves the same way, but it can't
+change either setting, so it always uses the defaults, and nothing rejects a duplicate.
 
 > [!WARNING]
 > Hosted services and post-initialization actions run before the first scene loads. Resolving a scene-placed singleton
