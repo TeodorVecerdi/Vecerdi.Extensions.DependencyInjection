@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
@@ -41,30 +40,6 @@ public static partial class BehaviourServices {
         }
     }
 
-    private static string HierarchyPath(Transform transform) {
-        var path = transform.name;
-        for (var parent = transform.parent; parent != null; parent = parent.parent) {
-            path = $"{parent.name}/{path}";
-        }
-
-        return path;
-    }
-
-    // BaseMonoBehaviour carries its own flag, so the common case never touches the tracker. Any other MonoBehaviour
-    // (InjectServices() is an extension on MonoBehaviour and works on foreign base classes) falls back to the
-    // id-based tracker.
-    private static bool IsAlreadyInjected(MonoBehaviour instance) => instance is BaseMonoBehaviour baseMonoBehaviour
-        ? baseMonoBehaviour.ServicesInjected
-        : s_InjectedInstances.Contains(instance);
-
-    private static void MarkInjected(MonoBehaviour instance) {
-        if (instance is BaseMonoBehaviour baseMonoBehaviour) {
-            baseMonoBehaviour.ServicesInjected = true;
-        } else {
-            s_InjectedInstances.Add(instance);
-        }
-    }
-
     public static T CreateMonoBehaviour<T>(ServiceLifetime lifetime) where T : MonoBehaviour {
         return lifetime switch {
             ServiceLifetime.Singleton => CreateSingleton(),
@@ -96,6 +71,32 @@ public static partial class BehaviourServices {
             }
 
             return instance;
+        }
+    }
+
+    private static string HierarchyPath(Transform transform) {
+        var path = transform.name;
+        for (var parent = transform.parent; parent != null; parent = parent.parent) {
+            path = $"{parent.name}/{path}";
+        }
+
+        return path;
+    }
+
+    private static bool IsAlreadyInjected(MonoBehaviour instance) {
+        // BaseMonoBehaviour carries its own flag, so the common case never touches the tracker. Any other MonoBehaviour
+        // (InjectServices() is an extension on MonoBehaviour and works on foreign base classes) falls back to the
+        // id-based tracker.
+        return instance is BaseMonoBehaviour baseMonoBehaviour
+            ? baseMonoBehaviour.ServicesInjected
+            : s_InjectedInstances.Contains(instance);
+    }
+
+    private static void MarkInjected(MonoBehaviour instance) {
+        if (instance is BaseMonoBehaviour baseMonoBehaviour) {
+            baseMonoBehaviour.ServicesInjected = true;
+        } else {
+            s_InjectedInstances.Add(instance);
         }
     }
 
