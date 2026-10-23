@@ -63,8 +63,6 @@ public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehavio
     }
 
     internal static void ResetInstance() {
-        if (s_Instance is IDisposable disposable)
-            disposable.Dispose();
         s_Instance = null;
     }
 
