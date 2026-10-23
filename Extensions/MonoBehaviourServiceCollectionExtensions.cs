@@ -5,83 +5,85 @@ using Vecerdi.Extensions.DependencyInjection.Internal;
 namespace Vecerdi.Extensions.DependencyInjection;
 
 public static class MonoBehaviourServiceCollectionExtensions {
-    public static IServiceCollection AddMonoBehaviourSingleton<T>(this IServiceCollection services) where T : MonoBehaviour {
-        services.Add(new ServiceDescriptor(typeof(T), sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
+    extension(IServiceCollection services) {
+        public IServiceCollection AddMonoBehaviourSingleton<T>() where T : MonoBehaviour {
+            services.Add(new ServiceDescriptor(typeof(T), sp => {
+                var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Singleton);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Singleton));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddKeyedMonoBehaviourSingleton<T>(this IServiceCollection services, object? serviceKey) where T : MonoBehaviour {
-        services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
+        public IServiceCollection AddMonoBehaviourSingleton<TInterface, TImplementation>() where TImplementation : MonoBehaviour, TInterface {
+            services.Add(new ServiceDescriptor(typeof(TInterface), sp => {
+                var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Singleton));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddMonoBehaviourSingleton<TInterface, TImplementation>(this IServiceCollection services) where TImplementation : MonoBehaviour, TInterface {
-        services.Add(new ServiceDescriptor(typeof(TInterface), sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
+        public IServiceCollection AddMonoBehaviourTransient<T>() where T : MonoBehaviour {
+            services.Add(new ServiceDescriptor(typeof(T), sp => {
+                var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Transient);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Transient));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddKeyedMonoBehaviourSingleton<TInterface, TImplementation>(this IServiceCollection services, object? serviceKey) where TImplementation : MonoBehaviour, TInterface {
-        services.Add(new ServiceDescriptor(typeof(TInterface), serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
+        public IServiceCollection AddMonoBehaviourTransient<TInterface, TImplementation>() where TImplementation : MonoBehaviour, TInterface {
+            services.Add(new ServiceDescriptor(typeof(TInterface), sp => {
+                var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Transient);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Transient));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddMonoBehaviourTransient<T>(this IServiceCollection services) where T : MonoBehaviour {
-        services.Add(new ServiceDescriptor(typeof(T), sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
+        public IServiceCollection AddKeyedMonoBehaviourSingleton<T>(object? serviceKey) where T : MonoBehaviour {
+            services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
+                var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Singleton);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Singleton));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddKeyedMonoBehaviourTransient<T>(this IServiceCollection services, object? serviceKey) where T : MonoBehaviour {
-        services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
+        public IServiceCollection AddKeyedMonoBehaviourSingleton<TInterface, TImplementation>(object? serviceKey) where TImplementation : MonoBehaviour, TInterface {
+            services.Add(new ServiceDescriptor(typeof(TInterface), serviceKey, (sp, _) => {
+                var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Singleton));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddMonoBehaviourTransient<TInterface, TImplementation>(this IServiceCollection services) where TImplementation : MonoBehaviour, TInterface {
-        services.Add(new ServiceDescriptor(typeof(TInterface), sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
+        public IServiceCollection AddKeyedMonoBehaviourTransient<T>(object? serviceKey) where T : MonoBehaviour {
+            services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
+                var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Transient);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Transient));
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddKeyedMonoBehaviourTransient<TInterface, TImplementation>(this IServiceCollection services, object? serviceKey) where TImplementation : MonoBehaviour, TInterface {
-        services.Add(new ServiceDescriptor(typeof(TInterface), serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
+        public IServiceCollection AddKeyedMonoBehaviourTransient<TInterface, TImplementation>(object? serviceKey) where TImplementation : MonoBehaviour, TInterface {
+            services.Add(new ServiceDescriptor(typeof(TInterface), serviceKey, (sp, _) => {
+                var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Transient);
+                BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
+                return instance;
+            }, ServiceLifetime.Transient));
 
-        return services;
+            return services;
+        }
     }
 }
