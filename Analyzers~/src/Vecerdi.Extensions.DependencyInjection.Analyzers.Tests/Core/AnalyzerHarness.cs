@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator.Tests;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers.Tests;
 
 /// <summary>
 /// Runs <see cref="MonoBehaviourSingletonFactoryAnalyzer"/> and its code fix over a test's source, compiled against

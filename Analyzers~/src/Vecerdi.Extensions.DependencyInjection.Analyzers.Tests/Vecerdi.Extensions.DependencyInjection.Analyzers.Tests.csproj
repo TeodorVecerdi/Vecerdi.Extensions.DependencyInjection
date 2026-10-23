@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Vecerdi.Extensions.DependencyInjection.SourceGenerator\Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj"/>
+        <ProjectReference Include="..\Vecerdi.Extensions.DependencyInjection.Analyzers\Vecerdi.Extensions.DependencyInjection.Analyzers.csproj"/>
         <ProjectReference Include="..\Vecerdi.Extensions.DependencyInjection.API\Vecerdi.Extensions.DependencyInjection.API.csproj"/>
     </ItemGroup>
 

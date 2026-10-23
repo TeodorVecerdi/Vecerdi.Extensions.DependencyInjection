@@ -6,7 +6,7 @@
         <IsPackable>false</IsPackable>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
-        <PackageVersion>1.8.0</PackageVersion>
+        <PackageVersion>2.0.0</PackageVersion>
         <Version>$(PackageVersion)</Version>
         <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 
@@ -26,12 +26,12 @@
     </ItemGroup>
 
     <!--
-        A Release build publishes the DLL (+ XML docs) into the DI package's SourceGenerator/ folder, where its .meta
+        A Release build publishes the DLL (+ XML docs) into the DI package's Analyzers/ folder, where its .meta
         labels it RoslynAnalyzer, so the generator Unity loads never drifts from this source.
     -->
     <Target Name="PublishToDependencyInjection" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-        <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).xml" DestinationFolder="$(MSBuildThisFileDirectory)..\..\..\SourceGenerator\" SkipUnchangedFiles="true" />
-        <Message Importance="high" Text="Published $(TargetName) $(Version) to DependencyInjection/SourceGenerator/" />
+        <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).xml" DestinationFolder="$(MSBuildThisFileDirectory)..\..\..\Analyzers\" SkipUnchangedFiles="true" />
+        <Message Importance="high" Text="Published $(TargetName) $(Version) to DependencyInjection/Analyzers/" />
     </Target>
 
 </Project>

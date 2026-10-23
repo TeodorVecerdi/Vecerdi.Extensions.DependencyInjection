@@ -5,6 +5,6 @@
     <File Path="Directory.Packages.props" />
   </Folder>
   <Project Path="Vecerdi.Extensions.DependencyInjection.API/Vecerdi.Extensions.DependencyInjection.API.csproj" />
-  <Project Path="Vecerdi.Extensions.DependencyInjection.SourceGenerator/Vecerdi.Extensions.DependencyInjection.SourceGenerator.csproj" />
-  <Project Path="Vecerdi.Extensions.DependencyInjection.SourceGenerator.Tests/Vecerdi.Extensions.DependencyInjection.SourceGenerator.Tests.csproj" />
+  <Project Path="Vecerdi.Extensions.DependencyInjection.Analyzers/Vecerdi.Extensions.DependencyInjection.Analyzers.csproj" />
+  <Project Path="Vecerdi.Extensions.DependencyInjection.Analyzers.Tests/Vecerdi.Extensions.DependencyInjection.Analyzers.Tests.csproj" />
 </Solution>

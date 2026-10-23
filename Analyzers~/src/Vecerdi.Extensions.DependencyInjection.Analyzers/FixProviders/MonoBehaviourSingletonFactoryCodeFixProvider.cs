@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 /// <summary>
 /// Rewrites a VDI0008 registration onto the <c>AddMonoBehaviourSingleton</c> family: a factory that returns the

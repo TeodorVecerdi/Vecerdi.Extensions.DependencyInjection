@@ -1,4 +1,4 @@
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator.Tests;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers.Tests;
 
 using static AnalyzerHarness;
 

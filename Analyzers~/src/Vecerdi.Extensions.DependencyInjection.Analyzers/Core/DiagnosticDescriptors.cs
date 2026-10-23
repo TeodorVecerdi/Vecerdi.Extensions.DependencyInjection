@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 public static class DiagnosticDescriptors {
     public static readonly DiagnosticDescriptor InitOnlyProperty = new(

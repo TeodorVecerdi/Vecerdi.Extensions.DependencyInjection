@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 /// <summary>
 /// VDI0008: a <c>Singleton</c> or <c>Scoped</c> factory registration whose lambda resolves a <c>MonoSingleton&lt;T&gt;</c>.

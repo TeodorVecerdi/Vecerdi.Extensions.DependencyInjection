@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Vecerdi.Extensions.DependencyInjection.Analyzers</name>
+    </assembly>
+    <members>
+        <member name="T:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactory">
+            <summary>
+            The analysis behind VDI0008, shared by the analyzer and its code fix so the two can never disagree about what a
+            registration is.
+            </summary>
+        </member>
+        <member name="M:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactory.GetServiceKeyArgument(Microsoft.CodeAnalysis.Operations.IInvocationOperation)">
+            <summary>The <c>serviceKey</c> argument of a keyed registration.</summary>
+        </member>
+        <member name="T:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryAnalyzer">
+            <summary>
+            VDI0008: a <c>Singleton</c> or <c>Scoped</c> factory registration whose lambda resolves a <c>MonoSingleton&lt;T&gt;</c>.
+            The container caches whatever the factory returns, so the registration keeps handing out the instance (or a part of
+            it) after Unity destroys it. A MonoBehaviour singleton is recognised by its base type alone; a plain MonoBehaviour
+            registered with <c>AddMonoBehaviourSingleton</c>, or a resolve through an interface, is not flagged.
+            </summary>
+        </member>
+        <member name="T:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFinding">
+            <summary>A container-cached factory registration whose lambda resolves a MonoBehaviour singleton.</summary>
+        </member>
+        <member name="M:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFinding.#ctor(Microsoft.CodeAnalysis.Operations.IInvocationOperation,Microsoft.CodeAnalysis.Operations.IAnonymousFunctionOperation,Microsoft.CodeAnalysis.Operations.IInvocationOperation,Microsoft.CodeAnalysis.ITypeSymbol,System.String,System.Boolean,Microsoft.CodeAnalysis.ITypeSymbol,Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFix)">
+            <summary>A container-cached factory registration whose lambda resolves a MonoBehaviour singleton.</summary>
+        </member>
+        <member name="T:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFix">
+            <summary>How a flagged registration can be rewritten, if at all.</summary>
+        </member>
+        <member name="F:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFix.None">
+            <summary>The factory does more than resolve the singleton; the diagnostic stands alone.</summary>
+        </member>
+        <member name="F:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFix.Register">
+            <summary>The factory returns the resolved singleton itself: <c>AddMonoBehaviourSingleton&lt;TService, T&gt;()</c>.</summary>
+        </member>
+        <member name="F:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryFix.Select">
+            <summary>The factory returns something built from the resolved singleton alone: the selector overload.</summary>
+        </member>
+        <member name="T:Vecerdi.Extensions.DependencyInjection.Analyzers.MonoBehaviourSingletonFactoryCodeFixProvider">
+            <summary>
+            Rewrites a VDI0008 registration onto the <c>AddMonoBehaviourSingleton</c> family: a factory that returns the
+            singleton becomes <c>AddMonoBehaviourSingleton&lt;TService, T&gt;()</c>, one that returns something built from it
+            alone becomes the selector overload. A factory that resolves anything else gets no fix.
+            </summary>
+        </member>
+    </members>
+</doc>

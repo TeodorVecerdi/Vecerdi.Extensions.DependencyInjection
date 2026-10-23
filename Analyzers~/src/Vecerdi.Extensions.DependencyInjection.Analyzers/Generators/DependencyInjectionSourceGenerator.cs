@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Vecerdi.Extensions.DependencyInjection.SourceGenerator;
+namespace Vecerdi.Extensions.DependencyInjection.Analyzers;
 
 [Generator]
 public class DependencyInjectionSourceGenerator : IIncrementalGenerator {
