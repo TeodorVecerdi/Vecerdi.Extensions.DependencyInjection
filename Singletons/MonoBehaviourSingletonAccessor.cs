@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 using Vecerdi.Extensions.DependencyInjection.Internal;
+using Object = UnityEngine.Object;
 
 namespace Vecerdi.Extensions.DependencyInjection;
 
 internal sealed class MonoBehaviourSingletonAccessor<T>(IServiceProvider root) : IMonoBehaviourSingletonRegistration where T : MonoBehaviour {
     public Type Type { get; } = typeof(T);
+    public bool InstanceExists => MonoSingleton<T>.InstanceExists || Object.FindAnyObjectByType<T>(FindObjectsInactive.Include) != null;
     public MissingSingletonInstanceBehavior MissingInstanceBehavior => MonoSingleton<T>.MissingInstanceBehavior;
     public SingletonPersistence Persistence => MonoSingleton<T>.Persistence;
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Vecerdi.Extensions.DependencyInjection.Infrastructure;
 using Vecerdi.Extensions.DependencyInjection.Internal;
 using Vecerdi.Extensions.Lifetime;
@@ -17,6 +18,7 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static readonly TimeSpan s_ShutdownTimeout = TimeSpan.FromSeconds(5);
 
     public static ITypeInjectorResolver Resolver { get; set; } = new ReflectionTypeInjectorResolver();
+    public static bool ValidateSceneSingletons { get; set; } = true;
 
     public static ServiceManager Instance => s_Instance ?? throw new InvalidOperationException("ServiceManager is not initialized yet");
 
@@ -54,6 +56,42 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
         s_Instance.InitializeServiceManager();
     }
 
+#if UNITY_EDITOR || UNITY_ENABLE_CHECKS
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void OnAfterSceneLoad() {
+        if (ValidateSceneSingletons)
+            s_Instance?.ValidateMonoBehaviourSingletons();
+    }
+
+    internal void ValidateMonoBehaviourSingletons() {
+        if (m_ServiceProvider is null)
+            return;
+        var missing = m_ServiceProvider.GetServices<IMonoBehaviourSingletonRegistration>()
+            .Where(r => r.MissingInstanceBehavior == MissingSingletonInstanceBehavior.Throw && !r.InstanceExists)
+            .Select(registration => registration.Type)
+            .ToList();
+        if (missing.Count == 0)
+            return;
+
+        var logger = m_ServiceProvider.GetService<ILogger<ServiceManager>>();
+        var scene = SceneManager.GetActiveScene().name;
+        var types = string.Join(", ", missing.Select(type => type.Name));
+
+        const string message =
+            "MonoBehaviour singletons registered with MissingSingletonInstanceBehavior.Throw are missing from the loaded scene '{Scene}': {Types}. " +
+            "Each throws when resolved: place it in the scene, switch it to MissingSingletonInstanceBehavior.Create, " +
+            "or, if a later scene provides it, set ServiceManager.ValidateSceneSingletons = false from a SubsystemRegistration method.";
+        if (logger is not null) {
+            logger.LogError(message, scene, types);
+        } else {
+            var formattedMessage = message
+                .Replace("{Scene}", scene)
+                .Replace("{Types}", types);
+            Debug.LogError($"[{nameof(ServiceManager)}] {formattedMessage}");
+        }
+    }
+#endif
+
     // Teardown runs from [OnExitingPlayMode]. Probed on 6000.7.0b3, it fires after every OnDisable/OnDestroy on each path
     // that ends a session: leaving play mode, a player quitting, closing the editor while playing, and recompiling
     // during play (objects only get OnDisable there; nothing re-creates the container afterwards). The order of OnDestroy
@@ -63,6 +101,8 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     private static void OnExitingPlayMode() {
         var instance = Interlocked.Exchange(ref s_Instance, null);
         instance?.TearDownServiceManager();
+        Resolver = new ReflectionTypeInjectorResolver();
+        ValidateSceneSingletons = true;
     }
 
     // The session is ending; Stopping goes out now, while every object is still alive, and teardown follows later from
