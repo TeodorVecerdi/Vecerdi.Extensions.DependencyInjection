@@ -35,8 +35,8 @@ public abstract class MonoSingleton<T> : BaseMonoBehaviour where T : MonoBehavio
         }
     }
 
-    protected static MissingSingletonInstanceBehavior MissingInstanceBehavior { get; set; } = MissingSingletonInstanceBehavior.Create;
-    protected static SingletonPersistence Persistence { get; set; } = SingletonPersistence.Scene;
+    protected internal static MissingSingletonInstanceBehavior MissingInstanceBehavior { get; protected set; } = MissingSingletonInstanceBehavior.Create;
+    protected internal static SingletonPersistence Persistence { get; protected set; } = SingletonPersistence.Scene;
 
     protected override void Awake() {
         if (s_Instance == null) {
