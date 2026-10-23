@@ -14,29 +14,42 @@ namespace Vecerdi.Extensions.DependencyInjection.Infrastructure;
 /// through <see cref="Resources.EntityIdsToValidArray(ReadOnlySpan{EntityId}, Span{bool})"/> purely to keep the
 /// set bounded.
 /// <para>
-/// Injection happens on the main thread only (from <c>Awake</c> or an explicit <c>InjectServices()</c> call), so
-/// the tracker is deliberately not thread-safe.
+/// Injection usually runs on the main thread (<c>Awake</c>), but an explicit <c>InjectServices()</c> may come from any
+/// thread, so every operation takes a private lock. It is almost never contended. Both Unity calls it makes are
+/// thread-safe: <see cref="UnityEngine.Object.GetEntityId"/> reads a field, and the validity check is a thread-safe
+/// native binding.
 /// </para>
 /// </remarks>
 internal sealed class InjectedInstancesTracker {
     private const int SweepInterval = 512;
+    private readonly object m_Gate = new();
     private readonly HashSet<EntityId> m_Instances = [];
     private int m_OperationsSinceSweep;
 
     public bool Contains(MonoBehaviour instance) {
-        CountOperation();
-        return m_Instances.Contains(instance.GetEntityId());
+        var entityId = instance.GetEntityId();
+        lock (m_Gate) {
+            CountOperation();
+            return m_Instances.Contains(entityId);
+        }
     }
 
     public void Add(MonoBehaviour instance) {
-        CountOperation();
-        m_Instances.Add(instance.GetEntityId());
+        var entityId = instance.GetEntityId();
+        lock (m_Gate) {
+            CountOperation();
+            m_Instances.Add(entityId);
+        }
     }
 
     public void Clear() {
-        m_Instances.Clear();
-        m_OperationsSinceSweep = 0;
+        lock (m_Gate) {
+            m_Instances.Clear();
+            m_OperationsSinceSweep = 0;
+        }
     }
+
+    // CountOperation and SweepDestroyed run under m_Gate.
 
     private void CountOperation() {
         if (++m_OperationsSinceSweep < SweepInterval) return;
