@@ -11,13 +11,19 @@ namespace Vecerdi.Extensions.DependencyInjection.Internal;
 public static partial class BehaviourServices {
     private static readonly InjectedInstancesTracker s_InjectedInstances = new();
 
+    // Injectors resolved so far, so a type pays the resolver's lookup (a generated context's name switch, a chain of
+    // contexts, the reflection fallback's allocation) once rather than on every injection. Only valid for the resolver
+    // that produced them; injection is main-thread only, so a plain dictionary is enough.
+    private static readonly Dictionary<Type, ITypeInjector> s_Injectors = new();
+    private static ITypeInjectorResolver? s_InjectorsResolver;
+
     public static void InjectIntoMonoBehaviourProperties(IServiceProvider serviceProvider, ITypeInjectorResolver resolver, MonoBehaviour instance) {
         var allowsMultiple = instance is IAllowsReinitialization;
         if (!allowsMultiple && IsAlreadyInjected(instance)) {
             return;
         }
 
-        var injector = resolver.GetTypeInjector(instance.GetType());
+        var injector = GetTypeInjector(resolver, instance.GetType());
         if (injector == null) {
             // This shouldn't happen if Resolver includes a reflection fallback, but for safety.
             throw new InvalidOperationException($"No injector found for type {instance.GetType()}.");
@@ -38,6 +44,31 @@ public static partial class BehaviourServices {
         if (!allowsMultiple) {
             MarkInjected(instance);
         }
+    }
+
+    private static ITypeInjector? GetTypeInjector(ITypeInjectorResolver resolver, Type type) {
+        if (!ReferenceEquals(resolver, s_InjectorsResolver)) {
+            s_Injectors.Clear();
+            s_InjectorsResolver = resolver;
+        }
+
+        if (s_Injectors.TryGetValue(type, out var injector)) {
+            return injector;
+        }
+
+        injector = resolver.GetTypeInjector(type);
+        if (injector != null) {
+            s_Injectors.Add(type, injector);
+        }
+
+        return injector;
+    }
+
+    // The keys are the user's types: they must not keep that code loaded once it is unloading.
+    [ClearCacheBetweenCodeLoads]
+    private static void ClearInjectorCache() {
+        s_Injectors.Clear();
+        s_InjectorsResolver = null;
     }
 
     public static T CreateMonoBehaviour<T>(ServiceLifetime lifetime) where T : MonoBehaviour {
