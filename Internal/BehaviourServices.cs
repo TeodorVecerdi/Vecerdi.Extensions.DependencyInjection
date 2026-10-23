@@ -99,35 +99,4 @@ public static partial class BehaviourServices {
         $"{type.Name} is a scene-placed singleton (MissingSingletonInstanceBehavior.Throw) but was resolved before the first scene loaded. " +
         "Hosted services and post-initialization actions run before any scene exists; resolve scene-placed singletons from scene code or after IHostApplicationLifetime.ApplicationStarted.",
         inner);
-
-    public static MonoBehaviour CreateMonoBehaviour(Type type, ServiceLifetime lifetime) {
-        return lifetime switch {
-            ServiceLifetime.Singleton => CreateSingleton(),
-            ServiceLifetime.Scoped or ServiceLifetime.Transient => CreateTransient(),
-            _ => throw new ArgumentOutOfRangeException(nameof(lifetime), lifetime, null),
-        };
-
-        MonoBehaviour CreateTransient() => (MonoBehaviour)new GameObject(type.Name).AddComponent(type) ?? throw new InvalidOperationException($"Failed to create {type.Name} instance.");
-
-        MonoBehaviour CreateSingleton() {
-            var singletonType = typeof(MonoSingleton<>).MakeGenericType(type);
-            var instanceProperty = singletonType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static)
-                                ?? throw new InvalidOperationException($"Could not find Instance property on {singletonType.Name}");
-            // Same rule as the generic overload: only a container-created instance is made DontDestroyOnLoad.
-            var existing = Object.FindAnyObjectByType(type, FindObjectsInactive.Include);
-            MonoBehaviour instance;
-            try {
-                instance = (MonoBehaviour)instanceProperty.GetValue(null)
-                        ?? throw new InvalidOperationException($"Failed to get instance of {type.Name}");
-            } catch (TargetInvocationException reflected) when (reflected.InnerException is InvalidOperationException exception && !SceneManager.GetActiveScene().isLoaded) {
-                throw ResolvedBeforeFirstScene(type, exception);
-            }
-
-            if (existing == null) {
-                Object.DontDestroyOnLoad(instance.gameObject);
-            }
-
-            return instance;
-        }
-    }
 }

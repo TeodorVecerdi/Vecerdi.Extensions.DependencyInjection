@@ -25,34 +25,6 @@ public static class MonoBehaviourServiceCollectionExtensions {
         return services;
     }
 
-    public static IServiceCollection AddMonoBehaviourSingleton(this IServiceCollection services, Type type) {
-        if (!typeof(MonoBehaviour).IsAssignableFrom(type)) {
-            throw new ArgumentException("Type must be a MonoBehaviour", nameof(type));
-        }
-
-        services.Add(new ServiceDescriptor(type, sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour(type, ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
-
-        return services;
-    }
-
-    public static IServiceCollection AddKeyedMonoBehaviourSingleton(this IServiceCollection services, Type type, object? serviceKey) {
-        if (!typeof(MonoBehaviour).IsAssignableFrom(type)) {
-            throw new ArgumentException("Type must be a MonoBehaviour", nameof(type));
-        }
-
-        services.Add(new ServiceDescriptor(type, serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour(type, ServiceLifetime.Singleton);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Singleton));
-
-        return services;
-    }
-
     public static IServiceCollection AddMonoBehaviourSingleton<TInterface, TImplementation>(this IServiceCollection services) where TImplementation : MonoBehaviour, TInterface {
         services.Add(new ServiceDescriptor(typeof(TInterface), sp => {
             var instance = BehaviourServices.CreateMonoBehaviour<TImplementation>(ServiceLifetime.Singleton);
@@ -86,34 +58,6 @@ public static class MonoBehaviourServiceCollectionExtensions {
     public static IServiceCollection AddKeyedMonoBehaviourTransient<T>(this IServiceCollection services, object? serviceKey) where T : MonoBehaviour {
         services.Add(new ServiceDescriptor(typeof(T), serviceKey, (sp, _) => {
             var instance = BehaviourServices.CreateMonoBehaviour<T>(ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
-
-        return services;
-    }
-
-    public static IServiceCollection AddMonoBehaviourTransient(this IServiceCollection services, Type type) {
-        if (!typeof(MonoBehaviour).IsAssignableFrom(type)) {
-            throw new ArgumentException("Type must be a MonoBehaviour", nameof(type));
-        }
-
-        services.Add(new ServiceDescriptor(type, sp => {
-            var instance = BehaviourServices.CreateMonoBehaviour(type, ServiceLifetime.Transient);
-            BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
-            return instance;
-        }, ServiceLifetime.Transient));
-
-        return services;
-    }
-
-    public static IServiceCollection AddKeyedMonoBehaviourTransient(this IServiceCollection services, Type type, object? serviceKey) {
-        if (!typeof(MonoBehaviour).IsAssignableFrom(type)) {
-            throw new ArgumentException("Type must be a MonoBehaviour", nameof(type));
-        }
-
-        services.Add(new ServiceDescriptor(type, serviceKey, (sp, _) => {
-            var instance = BehaviourServices.CreateMonoBehaviour(type, ServiceLifetime.Transient);
             BehaviourServices.InjectIntoMonoBehaviourProperties(sp, ServiceManager.Resolver, instance);
             return instance;
         }, ServiceLifetime.Transient));
