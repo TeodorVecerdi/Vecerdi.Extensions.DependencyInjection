@@ -1,8 +1,10 @@
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Unity.Profiling;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -110,29 +112,61 @@ public sealed partial class ServiceManager : IKeyedServiceProvider {
     // editor while playing skips it; the code lifetime's stop (EditorApplication.quitting) covers that path.
     private static void HandleApplicationQuitting() => s_Instance?.m_Lifetime.NotifyStopping();
 
+    // Startup phases, visible in Unity's profiler (a player started with -profiler-enable): building the container runs
+    // on the main thread before the first scene loads, and each registration action is marked by its declaring method.
+    private static readonly ProfilerMarker s_ConfigurationMarker = new("ServiceManager.Configuration");
+    private static readonly ProfilerMarker s_RegistrationsMarker = new("ServiceManager.Registrations");
+    private static readonly ProfilerMarker s_BuildProviderMarker = new("ServiceManager.BuildServiceProvider");
+    private static readonly ProfilerMarker s_PostInitializationMarker = new("ServiceManager.PostInitializationActions");
+
     internal void InitializeServiceManager() {
         var configuration = new ConfigurationManager();
         m_Configuration = configuration;
-        s_ConfigurationRegistrations.ForEach(action => action(configuration));
+        using (s_ConfigurationMarker.Auto()) {
+            foreach (var action in s_ConfigurationRegistrations)
+                Run(action.Method, () => action(configuration));
+        }
+
         s_ConfigurationRegistrations.Clear();
 
         var services = new ServiceCollection();
-        s_ServiceRegistrations.ForEach(action => action(services, configuration));
+        using (s_RegistrationsMarker.Auto()) {
+            foreach (var action in s_ServiceRegistrations)
+                Run(action.Method, () => action(services, configuration));
+        }
+
         s_ServiceRegistrations.Clear();
 
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<IHostApplicationLifetime>(m_Lifetime);
 
-        m_ServiceProvider = services.BuildServiceProvider();
+        using (s_BuildProviderMarker.Auto())
+            m_ServiceProvider = services.BuildServiceProvider();
         m_CodeLifetimeRegistration = CodeLifetime.OnStopping(nameof(ServiceManager), _ => m_Lifetime.NotifyStopping());
 
-        s_PostInitializationActions.ForEach(action => action(m_ServiceProvider));
+        var provider = m_ServiceProvider;
+        using (s_PostInitializationMarker.Auto()) {
+            foreach (var action in s_PostInitializationActions)
+                Run(action.Method, () => action(provider));
+        }
+
         s_PostInitializationActions.Clear();
 
         // Hosted services are resolved and started on the thread pool, during the splash screen: their
         // constructors and the synchronous head of each StartAsync must not touch MonoBehaviour singletons
         // or main-thread-only Unity APIs. Hop to the main thread explicitly where one is needed.
         m_Startup = Task.Run(StartHostedServicesAsync);
+    }
+
+    // Runs one registration action under a marker named for the method that registered it ("AppServices.Configure"),
+    // the closure class skipped for lambdas. A marker per action is created once per process: startup only.
+    private static void Run(MethodInfo method, Action action) {
+        var type = method.DeclaringType;
+        while (type is { IsNested: true } && type.Name.StartsWith('<'))
+            type = type.DeclaringType; // <>c, <>c__DisplayClass: compiler-generated closures
+        var name = method.Name.StartsWith('<') && method.Name.IndexOf('>') is var end and > 1 ? method.Name[1..end] : method.Name;
+        using (new ProfilerMarker($"{type?.Name ?? "?"}.{name}").Auto())
+            action();
     }
 
     internal void TearDownServiceManager() {
